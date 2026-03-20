@@ -42,6 +42,7 @@ export default function HomePage() {
               color: "white",
               textDecoration: "none",
               fontWeight: "bold",
+              display: "block",
             }}
           >
             Gestione Ordini
@@ -49,4 +50,35 @@ export default function HomePage() {
 
           <a
             href="/ordine/4-gatti"
-            style
+            style={{
+              backgroundColor: "#f59e0b",
+              padding: "14px",
+              borderRadius: 10,
+              color: "white",
+              textDecoration: "none",
+              fontWeight: "bold",
+              display: "block",
+            }}
+          >
+            Pagina Ordine Cliente
+          </a>
+
+          <a
+            href="/stampa/andrea"
+            style={{
+              backgroundColor: "#16a34a",
+              padding: "14px",
+              borderRadius: 10,
+              color: "white",
+              textDecoration: "none",
+              fontWeight: "bold",
+              display: "block",
+            }}
+          >
+            Stampa Andrea
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
