@@ -101,7 +101,6 @@ export default function StampaRaffaelePage() {
 
     (ordini || []).forEach((ordine) => {
       const clienteNome = clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
-
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
       const righeRaffaele = righeOrdine.filter(
@@ -126,9 +125,7 @@ export default function StampaRaffaelePage() {
     });
 
     const risultatoOrdinato = Object.fromEntries(
-      Object.entries(risultato).sort((a, b) =>
-        a[0].localeCompare(b[0], "it")
-      )
+      Object.entries(risultato).sort((a, b) => a[0].localeCompare(b[0], "it"))
     );
 
     setDati(risultatoOrdinato);
@@ -142,32 +139,51 @@ export default function StampaRaffaelePage() {
   return (
     <div
       style={{
-        padding: 30,
+        padding: 10,
         fontFamily: "Arial, sans-serif",
         backgroundColor: "#ffffff",
         color: "#000000",
         minHeight: "100vh",
       }}
     >
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <style>{`
+        @page {
+          size: A4 portrait;
+          margin: 8mm;
+        }
+
+        @media print {
+          button {
+            display: none !important;
+          }
+
+          body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+          }
+        }
+      `}</style>
+
+      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 24,
+            marginBottom: 10,
             flexWrap: "wrap",
-            gap: 12,
+            gap: 8,
           }}
         >
-          <h1 style={{ margin: 0 }}>Stampa Raffaele</h1>
+          <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Raffaele</h1>
 
           <button
             onClick={stampaPagina}
             style={{
-              padding: "10px 16px",
+              padding: "8px 14px",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 6,
               backgroundColor: "#111827",
               color: "#ffffff",
               fontWeight: "bold",
@@ -183,24 +199,79 @@ export default function StampaRaffaelePage() {
         ) : Object.keys(dati).length === 0 ? (
           <p>Nessun dato per Raffaele nella giornata operativa corrente.</p>
         ) : (
-          Object.entries(dati).map(([cliente, prodotti]) => (
-            <div
-              key={cliente}
-              style={{
-                marginBottom: 28,
-                paddingBottom: 18,
-                borderBottom: "1px solid #d1d5db",
-              }}
-            >
-              <h2 style={{ marginBottom: 12 }}>{cliente}</h2>
-
-              {prodotti.map((p, i) => (
-                <div key={`${cliente}-${i}`} style={{ marginBottom: 6 }}>
-                  - {p.nome} → {p.quantita} {p.unita}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 8,
+              alignItems: "start",
+            }}
+          >
+            {Object.entries(dati).map(([cliente, prodotti]) => (
+              <div
+                key={cliente}
+                style={{
+                  border: "1px solid #000000",
+                  borderRadius: 4,
+                  padding: 6,
+                  backgroundColor: "#ffffff",
+                  breakInside: "avoid",
+                  pageBreakInside: "avoid",
+                  minHeight: 0,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 12,
+                    textTransform: "uppercase",
+                    borderBottom: "1px solid #000000",
+                    paddingBottom: 4,
+                    marginBottom: 4,
+                    wordBreak: "break-word",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {cliente}
                 </div>
-              ))}
-            </div>
-          ))
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    fontSize: 10,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {prodotti.map((p, i) => (
+                    <div
+                      key={`${cliente}-${i}`}
+                      style={{
+                        paddingBottom: 2,
+                        marginBottom: 2,
+                        borderBottom:
+                          i !== prodotti.length - 1 ? "1px dotted #cfcfcf" : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          wordBreak: "break-word",
+                          lineHeight: 1.05,
+                        }}
+                      >
+                        {p.nome}
+                      </div>
+                      <div style={{ lineHeight: 1.05 }}>
+                        {p.quantita} {p.unita}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
