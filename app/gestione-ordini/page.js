@@ -87,6 +87,21 @@ function getStileCard(stato) {
   }
 }
 
+function bottoneLink(backgroundColor) {
+  return {
+    padding: "10px 14px",
+    border: "1px solid #334155",
+    backgroundColor,
+    color: "#ffffff",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: "bold",
+    textDecoration: "none",
+    display: "inline-block",
+    textAlign: "center",
+  };
+}
+
 export default function GestioneOrdiniPage() {
   const [ordini, setOrdini] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
@@ -262,7 +277,6 @@ export default function GestioneOrdiniPage() {
         : true;
 
       const matchData = filtroData ? o.data_operativa === filtroData : true;
-
       const matchStato = filtroStato ? (o.stato || "") === filtroStato : true;
 
       return matchCliente && matchData && matchStato;
@@ -484,20 +498,40 @@ export default function GestioneOrdiniPage() {
         >
           <h1 style={{ margin: 0, fontSize: 32 }}>Gestione Ordini</h1>
 
-          <button
-            onClick={caricaOrdini}
+          <div
             style={{
-              padding: "10px 14px",
-              border: "1px solid #334155",
-              backgroundColor: "#1e293b",
-              color: "#ffffff",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: "bold",
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
             }}
           >
-            Aggiorna
-          </button>
+            <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
+              Stampa Andrea
+            </a>
+
+            <a href="/stampa/raffaele" style={bottoneLink("#f97316")}>
+              Stampa Raffaele
+            </a>
+
+            <a href="/stampa/totale" style={bottoneLink("#0ea5e9")}>
+              Stampa Totale
+            </a>
+
+            <button
+              onClick={caricaOrdini}
+              style={{
+                padding: "10px 14px",
+                border: "1px solid #334155",
+                backgroundColor: "#1e293b",
+                color: "#ffffff",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Aggiorna
+            </button>
+          </div>
         </div>
 
         <div
