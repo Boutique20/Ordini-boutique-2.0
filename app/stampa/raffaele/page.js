@@ -28,7 +28,7 @@ function getDataOperativaOggi() {
   return `${y}-${m}-${d}`;
 }
 
-export default function StampaAndreaPage() {
+export default function StampaRaffaelePage() {
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
@@ -104,16 +104,16 @@ export default function StampaAndreaPage() {
 
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
-      const righeAndrea = righeOrdine.filter(
-        (r) => prodottiMap[r.prodotto_id]?.stampa === "ANDREA"
+      const righeRaffaele = righeOrdine.filter(
+        (r) => prodottiMap[r.prodotto_id]?.stampa === "RAFFAELE"
       );
 
-      if (righeAndrea.length > 0) {
+      if (righeRaffaele.length > 0) {
         if (!risultato[clienteNome]) {
           risultato[clienteNome] = [];
         }
 
-        righeAndrea.forEach((r) => {
+        righeRaffaele.forEach((r) => {
           risultato[clienteNome].push({
             nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
             quantita: r.quantita,
@@ -160,7 +160,7 @@ export default function StampaAndreaPage() {
             gap: 12,
           }}
         >
-          <h1 style={{ margin: 0 }}>Stampa Andrea</h1>
+          <h1 style={{ margin: 0 }}>Stampa Raffaele</h1>
 
           <button
             onClick={stampaPagina}
@@ -181,7 +181,7 @@ export default function StampaAndreaPage() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun dato per Andrea nella giornata operativa corrente.</p>
+          <p>Nessun dato per Raffaele nella giornata operativa corrente.</p>
         ) : (
           Object.entries(dati).map(([cliente, prodotti]) => (
             <div

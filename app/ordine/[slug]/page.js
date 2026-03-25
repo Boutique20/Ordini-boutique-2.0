@@ -5,12 +5,133 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 const CATEGORY_LABELS = {
-  P: "Pesce fresco",
-  "P/L": "Pesce fresco lavorato",
-  FDM: "Frutti di mare",
-  "FDM/L": "Frutti di mare lavorati",
-  C: "Congelato",
-  OST: "Ostriche",
+  P: "PESCE FRESCO",
+  "P/L": "PESCE FRESCO LAVORATO",
+  FDM: "FRUTTI DI MARE",
+  "FDM/L": "FRUTTI DI MARE LAVORATI",
+  C: "CONGELATO",
+  OST: "OSTRICHE",
+};
+
+const CATEGORY_ORDER = ["C", "FDM", "FDM/L", "P", "P/L", "OST"];
+
+function normalizeName(nome) {
+  return (nome || "").replace(/\s+/g, " ").trim().toUpperCase();
+}
+
+const UNITA_FALLBACK = {
+  "ASTICE CONGELATO": ["KG", "PZ"],
+  "FILETTO BACCALA": ["KG", "CT"],
+  "GAMBERO ECUADOR SGUSCIATO": ["KG", "CT"],
+  "GAMBERO L1": ["KG", "CT"],
+  "GAMBERO ROSSO 1": ["KG"],
+  "GAMBERO ROSSO 2": ["KG"],
+  "GAMBERO ROSSO 3": ["KG"],
+  "GAMBERO ROSSO 4": ["KG"],
+  "GAMBERO ROSSO 5": ["KG"],
+  "GAMBERO VIOLA 1": ["KG"],
+  "GAMBERO VIOLA 2": ["KG"],
+  "GAMBERO VIOLA 3": ["KG"],
+  "GAMBERO VIOLA 4": ["KG"],
+  "GAMBERO VIOLA 5": ["KG"],
+  "MAZZANCOLLE MAKUBA 1": ["KG"],
+  "MAZZANCOLLE MAKUBA 2": ["KG"],
+  "MAZZANCOLLE MAKUBA 3": ["KG"],
+  "MAZZANCOLLE MAKUBA 4": ["KG"],
+  "POLPO T5": ["KG", "CT"],
+  "POLPO T6": ["KG", "CT"],
+  "POLPO T7": ["KG", "CT"],
+  "POLPO T8": ["KG", "CT"],
+  "POLPO T9": ["KG", "CT"],
+  "SCAMPO 0/5": ["KG"],
+  "SCAMPO 5/10": ["KG"],
+  "SCAMPO 10/15": ["KG"],
+  "SCAMPO 15/20": ["KG"],
+  "SCAMPO 20/30": ["KG"],
+  "SCAMPO 30/40": ["KG"],
+  "SEPPIA PULITA TAGLIATA X CUCINA": ["KG"],
+  "SEPPIA SPIEDINO": ["KG"],
+
+  "BULLI": ["KG"],
+  "CANESTRELLO": ["KG"],
+  "CANNELLO": ["KG"],
+  "COZZA NERA": ["KG"],
+  "COZZA PELOSA": ["KG"],
+  "FASOLARI": ["KG"],
+  "LUPINI": ["KG"],
+  "MUSSOLI": ["KG"],
+  "NOCE BIANCA": ["KG"],
+  "NOCE ROSSA": ["KG"],
+  "OSTRICA CONCAVA": ["KG", "PZ"],
+  "OSTRICA PERLE BY BOUTIQUE": ["KG", "CEST"],
+  "VONGOLA VERACE": ["KG"],
+
+  "CALAMARETTO": ["KG", "PZ"],
+  "ALLIEVI": ["KG", "PZ"],
+  "COZZA FRUTTO NETTO APERTA": ["KG", "PZ"],
+  "COZZA MEZZO GUSCIO APERTA": ["KG", "PZ"],
+  "COZZA PELOSA APERTA": ["KG", "PZ"],
+  "FASOLARI APERTI": ["KG", "PZ"],
+  "GAMBERO ROSSO X CRUDO 3": ["KG", "PZ"],
+  "GAMBERO ROSSO X CRUDO 4": ["KG", "PZ"],
+  "NOCE BIANCA MEZZO GUSCIO APERTA": ["KG", "PZ"],
+  "NOCE ROSSA MEZZO GUSCIO APERTA": ["KG", "PZ"],
+  "POLIPETTO": ["KG"],
+  "RICCI": ["KG", "PZ"],
+  "SCAMPO 16/20 X CRUDO": ["KG", "PZ"],
+  "SCAMPO 20/30 X CRUDO": ["KG", "PZ"],
+  "TAGLIATELLA": ["KG"],
+  "VONGOLA APERTA": ["KG", "PZ"],
+
+  "CICALA/CANOCCHIA": ["KG", "PZ"],
+  "CICALA GRECA": ["KG", "PZ"],
+  "ARAGOSTA": ["KG", "PZ"],
+  "ASTICI BLU": ["KG", "PZ"],
+  "DENTICE LOCALE": ["KG", "PZ"],
+  "ORATA LOCALE": ["KG", "PZ"],
+  "SPIGOLA LOCALE": ["KG", "PZ"],
+  "ALICI": ["KG", "CASSA"],
+  "ASTICE FRESCO": ["KG", "PZ"],
+  "CALAMARO FRESCO": ["KG", "PZ"],
+  "CERNIA": ["KG", "PZ"],
+  "DENTICE": ["KG", "PZ"],
+  "FILONE DI SPADA": ["KG", "PZ"],
+  "FRITTURA": ["KG"],
+  "GALLINELLA": ["KG", "PZ"],
+  "MAZZANCOLLE LOCALE": ["KG", "PZ"],
+  "MERLUZZO": ["KG", "PZ"],
+  "OMBRINA": ["KG", "PZ"],
+  "ORATA 1000": ["KG", "PZ"],
+  "ORATA 1200": ["KG", "PZ"],
+  "ORATA 1500": ["KG", "PZ"],
+  "ORATA 3/4": ["KG", "PZ"],
+  "ORATA 4/6": ["KG", "PZ"],
+  "ORATA 6/8": ["KG", "PZ"],
+  "ORATA ORBETELLO": ["KG", "PZ"],
+  "RANA PESCATRICE": ["KG", "PZ"],
+  "RICCIOLA": ["KG", "PZ"],
+  "RICCIOLA 800/1500": ["KG", "PZ"],
+  "ROMBO": ["KG", "PZ"],
+  "SALMONE": ["KG", "PZ"],
+  "SAN PIETRO": ["KG", "PZ"],
+  "SARAGO 1": ["KG", "PZ"],
+  "SARAGO 2": ["KG", "PZ"],
+  "SCORFANO LOCALE": ["KG", "PZ"],
+  "SCORFANO MAROCCO": ["KG", "PZ"],
+  "SCORFANO SENEGAL": ["KG", "PZ"],
+  "SEPPIA FRESCA": ["KG", "PZ"],
+  "SGOMBRO": ["KG", "PZ"],
+  "SOGLIOLA": ["KG", "PZ"],
+  "SPIGOLA 3/4": ["KG", "PZ"],
+  "SPIGOLA 4/6": ["KG", "PZ"],
+  "SPIGOLA 6/8": ["KG", "PZ"],
+  "SPIGOLA 1000": ["KG", "PZ"],
+  "SPIGOLA 1200": ["KG", "PZ"],
+  "SPIGOLA 1500": ["KG", "PZ"],
+  "SPIGOLA 2000+": ["KG", "PZ"],
+  "SPIGOLA ORBETELLO": ["KG", "PZ"],
+  "TONNO": ["KG", "PZ"],
+  "TRIGLIA": ["KG", "PZ"],
 };
 
 function getDataOperativa() {
@@ -108,8 +229,11 @@ export default function OrdineClientePage() {
 
     const defaultUnita = {};
     for (const prodotto of prodottiData || []) {
-      const opzioni = mappaUnita[prodotto.id] || [prodotto.unita_vendita || "KG"];
+      const nomeNorm = normalizeName(prodotto.nome);
+      const fallback = UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
+      const opzioni = mappaUnita[prodotto.id] || fallback;
       defaultUnita[prodotto.id] = opzioni[0];
+      mappaUnita[prodotto.id] = opzioni;
     }
 
     setCliente(clienteData);
@@ -142,7 +266,20 @@ export default function OrdineClientePage() {
       gruppi[codice].push(prodotto);
     }
 
-    return gruppi;
+    const gruppiOrdinati = {};
+    for (const categoria of CATEGORY_ORDER) {
+      if (gruppi[categoria]) {
+        gruppiOrdinati[categoria] = gruppi[categoria];
+      }
+    }
+
+    for (const categoria of Object.keys(gruppi)) {
+      if (!gruppiOrdinati[categoria]) {
+        gruppiOrdinati[categoria] = gruppi[categoria];
+      }
+    }
+
+    return gruppiOrdinati;
   }, [prodotti]);
 
   const riepilogoOrdine = useMemo(() => {
@@ -222,8 +359,9 @@ export default function OrdineClientePage() {
 
     const resetUnita = {};
     for (const prodotto of prodotti) {
-      const opzioni =
-        unitaProdotti[prodotto.id] || [prodotto.unita_vendita || "KG"];
+      const nomeNorm = normalizeName(prodotto.nome);
+      const fallback = UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
+      const opzioni = unitaProdotti[prodotto.id] || fallback;
       resetUnita[prodotto.id] = opzioni[0];
     }
     setUnitaSelezionate(resetUnita);
@@ -232,108 +370,281 @@ export default function OrdineClientePage() {
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 900, margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
-      <h1>Selezione giornaliera Boutique 2.0</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #0b2d3b 0%, #0f172a 100%)",
+        padding: 20,
+        fontFamily: "Arial, sans-serif",
+        color: "#ffffff",
+      }}
+    >
+      <div style={{ maxWidth: 980, margin: "0 auto" }}>
+        <div
+          style={{
+            backgroundColor: "rgba(15, 23, 42, 0.55)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 18,
+            padding: 24,
+            marginBottom: 24,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
+            backdropFilter: "blur(8px)",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 32,
+              fontWeight: "bold",
+              letterSpacing: 0.4,
+            }}
+          >
+            Selezione giornaliera Boutique 2.0
+          </h1>
 
-      {cliente && <h2 style={{ marginBottom: 20 }}>{cliente.nome}</h2>}
+          {cliente && (
+            <h2
+              style={{
+                marginTop: 14,
+                marginBottom: 0,
+                fontSize: 22,
+                fontWeight: "bold",
+                color: "#dbeafe",
+              }}
+            >
+              {cliente.nome}
+            </h2>
+          )}
+        </div>
 
-      {caricamento ? (
-        <p>Caricamento...</p>
-      ) : (
-        Object.keys(prodottiPerCategoria).map((categoria) => (
-          <div key={categoria} style={{ marginBottom: 30 }}>
-            <h3>{CATEGORY_LABELS[categoria] || categoria}</h3>
-
-            {prodottiPerCategoria[categoria].map((p) => {
-              const opzioniUnita =
-                unitaProdotti[p.id] || [p.unita_vendita || "KG"];
-
-              return (
+        <div
+          style={{
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 18,
+            padding: 22,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          {caricamento ? (
+            <p style={{ fontSize: 18 }}>Caricamento...</p>
+          ) : (
+            Object.keys(prodottiPerCategoria).map((categoria) => (
+              <div key={categoria} style={{ marginBottom: 34 }}>
                 <div
-                  key={p.id}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0",
-                    borderBottom: "1px solid #ddd",
-                    gap: 12,
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    marginTop: 10,
+                    marginBottom: 14,
+                    color: "#7dd3fc",
+                    borderBottom: "2px solid rgba(125, 211, 252, 0.35)",
+                    paddingBottom: 8,
+                    letterSpacing: 0.5,
                   }}
                 >
-                  <span style={{ flex: 1 }}>{p.nome}</span>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={quantita[p.id] || ""}
-                      onChange={(e) => aggiornaQuantita(p.id, e.target.value)}
-                      style={{ width: 90, padding: 8 }}
-                    />
-
-                    {opzioniUnita.length === 1 ? (
-                      <span style={{ minWidth: 50 }}>{opzioniUnita[0]}</span>
-                    ) : (
-                      <select
-                        value={unitaSelezionate[p.id] || opzioniUnita[0]}
-                        onChange={(e) => aggiornaUnita(p.id, e.target.value)}
-                        style={{ minWidth: 90, padding: 8 }}
-                      >
-                        {opzioniUnita.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+                  {CATEGORY_LABELS[categoria] || categoria}
                 </div>
-              );
-            })}
-          </div>
-        ))
-      )}
 
-      <div style={{ marginTop: 30 }}>
-        <h3>Note finali</h3>
-        <textarea
-          rows="4"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          style={{ width: "100%", padding: 10 }}
-          placeholder="Scrivi qui eventuali note generali"
-        />
-      </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {prodottiPerCategoria[categoria].map((p) => {
+                    const nomeNorm = normalizeName(p.nome);
+                    const opzioniUnita =
+                      unitaProdotti[p.id] ||
+                      UNITA_FALLBACK[nomeNorm] ||
+                      [p.unita_vendita || "KG"];
 
-      <div style={{ marginTop: 30 }}>
-        <h3>Riepilogo ordine</h3>
+                    return (
+                      <div
+                        key={p.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          backgroundColor: "rgba(255,255,255,0.04)",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            flex: 1,
+                            minWidth: 240,
+                            fontSize: 17,
+                            fontWeight: 600,
+                            color: "#f8fafc",
+                          }}
+                        >
+                          {p.nome}
+                        </div>
 
-        {riepilogoOrdine.length === 0 ? (
-          <p>Nessun prodotto selezionato.</p>
-        ) : (
-          riepilogoOrdine.map((riga) => (
-            <div key={riga.id} style={{ marginBottom: 6 }}>
-              - {riga.nome} → {riga.quantita} {riga.unita}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={quantita[p.id] || ""}
+                            onChange={(e) => aggiornaQuantita(p.id, e.target.value)}
+                            placeholder="Qtà"
+                            style={{
+                              width: 95,
+                              padding: "12px 10px",
+                              borderRadius: 10,
+                              border: "2px solid #475569",
+                              backgroundColor: "#0f172a",
+                              color: "#ffffff",
+                              fontSize: 16,
+                              textAlign: "center",
+                              outline: "none",
+                            }}
+                          />
+
+                          {opzioniUnita.length === 1 ? (
+                            <div
+                              style={{
+                                minWidth: 72,
+                                padding: "12px 10px",
+                                borderRadius: 10,
+                                border: "2px solid #334155",
+                                backgroundColor: "#1e293b",
+                                color: "#e2e8f0",
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                fontSize: 15,
+                              }}
+                            >
+                              {opzioniUnita[0]}
+                            </div>
+                          ) : (
+                            <select
+                              value={unitaSelezionate[p.id] || opzioniUnita[0]}
+                              onChange={(e) => aggiornaUnita(p.id, e.target.value)}
+                              style={{
+                                minWidth: 100,
+                                padding: "12px 10px",
+                                borderRadius: 10,
+                                border: "2px solid #475569",
+                                backgroundColor: "#0f172a",
+                                color: "#ffffff",
+                                fontSize: 15,
+                                fontWeight: "bold",
+                                outline: "none",
+                              }}
+                            >
+                              {opzioniUnita.map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+
+          <div style={{ marginTop: 36 }}>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: "#7dd3fc",
+              }}
+            >
+              Note finali
             </div>
-          ))
-        )}
-      </div>
 
-      <button
-        onClick={inviaOrdine}
-        disabled={invioInCorso}
-        style={{
-          marginTop: 25,
-          padding: "14px 20px",
-          border: "none",
-          cursor: "pointer",
-          fontWeight: "bold",
-          fontSize: 16,
-        }}
-      >
-        {invioInCorso ? "Invio in corso..." : "Invia ordine"}
-      </button>
+            <textarea
+              rows="4"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              style={{
+                width: "100%",
+                padding: 14,
+                borderRadius: 12,
+                border: "2px solid #475569",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
+                fontSize: 15,
+                resize: "vertical",
+                boxSizing: "border-box",
+              }}
+              placeholder="Scrivi qui eventuali note generali"
+            />
+          </div>
+
+          <div style={{ marginTop: 36 }}>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: "#7dd3fc",
+              }}
+            >
+              Riepilogo ordine
+            </div>
+
+            {riepilogoOrdine.length === 0 ? (
+              <p style={{ color: "#cbd5e1" }}>Nessun prodotto selezionato.</p>
+            ) : (
+              <div
+                style={{
+                  borderRadius: 14,
+                  padding: 16,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                {riepilogoOrdine.map((riga) => (
+                  <div key={riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
+                    - {riga.nome} → {riga.quantita} {riga.unita}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={inviaOrdine}
+            disabled={invioInCorso}
+            style={{
+              marginTop: 28,
+              width: "100%",
+              padding: "16px 20px",
+              border: "none",
+              cursor: invioInCorso ? "not-allowed" : "pointer",
+              fontWeight: "bold",
+              fontSize: 17,
+              borderRadius: 14,
+              background: invioInCorso
+                ? "#64748b"
+                : "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
+              color: "#ffffff",
+              boxShadow: "0 10px 24px rgba(2,132,199,0.25)",
+            }}
+          >
+            {invioInCorso ? "Invio in corso..." : "Invia ordine"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
