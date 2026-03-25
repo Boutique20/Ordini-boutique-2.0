@@ -33,52 +33,61 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          
+          {/* GESTIONE */}
           <a
             href="/gestione-ordini"
-            style={{
-              backgroundColor: "#2563eb",
-              padding: "14px",
-              borderRadius: 10,
-              color: "white",
-              textDecoration: "none",
-              fontWeight: "bold",
-              display: "block",
-            }}
+            style={btn("#2563eb")}
           >
             Gestione Ordini
           </a>
 
+          {/* CLIENTE */}
           <a
             href="/ordine/4-gatti"
-            style={{
-              backgroundColor: "#f59e0b",
-              padding: "14px",
-              borderRadius: 10,
-              color: "white",
-              textDecoration: "none",
-              fontWeight: "bold",
-              display: "block",
-            }}
+            style={btn("#f59e0b")}
           >
             Pagina Ordine Cliente
           </a>
 
+          {/* STAMPE */}
           <a
             href="/stampa/andrea"
-            style={{
-              backgroundColor: "#16a34a",
-              padding: "14px",
-              borderRadius: 10,
-              color: "white",
-              textDecoration: "none",
-              fontWeight: "bold",
-              display: "block",
-            }}
+            style={btn("#16a34a")}
           >
             Stampa Andrea
           </a>
+
+          <a
+            href="/stampa/raffaele"
+            style={btn("#22c55e")}
+          >
+            Stampa Raffaele
+          </a>
+
+          <a
+            href="/stampa/totale"
+            style={btn("#0ea5e9")}
+          >
+            Stampa Totale
+          </a>
+
         </div>
       </div>
     </div>
   );
+}
+
+/* FUNZIONE PER BOTTONI (PULIZIA CODICE) */
+function btn(color) {
+  return {
+    backgroundColor: color,
+    padding: "14px",
+    borderRadius: 10,
+    color: "white",
+    textDecoration: "none",
+    fontWeight: "bold",
+    display: "block",
+    textAlign: "center",
+  };
 }
