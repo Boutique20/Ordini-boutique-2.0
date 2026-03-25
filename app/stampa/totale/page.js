@@ -101,7 +101,6 @@ export default function StampaTotalePage() {
 
     (ordini || []).forEach((ordine) => {
       const clienteNome = clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
-
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
       if (righeOrdine.length > 0) {
@@ -122,9 +121,7 @@ export default function StampaTotalePage() {
     });
 
     const risultatoOrdinato = Object.fromEntries(
-      Object.entries(risultato).sort((a, b) =>
-        a[0].localeCompare(b[0], "it")
-      )
+      Object.entries(risultato).sort((a, b) => a[0].localeCompare(b[0], "it"))
     );
 
     setDati(risultatoOrdinato);
@@ -138,7 +135,7 @@ export default function StampaTotalePage() {
   return (
     <div
       style={{
-        padding: 24,
+        padding: 10,
         fontFamily: "Arial, sans-serif",
         backgroundColor: "#ffffff",
         color: "#000000",
@@ -146,6 +143,11 @@ export default function StampaTotalePage() {
       }}
     >
       <style>{`
+        @page {
+          size: A4 portrait;
+          margin: 8mm;
+        }
+
         @media print {
           button {
             display: none !important;
@@ -154,6 +156,7 @@ export default function StampaTotalePage() {
           body {
             margin: 0;
             padding: 0;
+            background: #ffffff;
           }
         }
       `}</style>
@@ -164,19 +167,19 @@ export default function StampaTotalePage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 24,
+            marginBottom: 10,
             flexWrap: "wrap",
-            gap: 12,
+            gap: 8,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 30 }}>Stampa Totale Ordini</h1>
+          <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Totale Ordini</h1>
 
           <button
             onClick={stampaPagina}
             style={{
-              padding: "10px 16px",
+              padding: "8px 14px",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 6,
               backgroundColor: "#111827",
               color: "#ffffff",
               fontWeight: "bold",
@@ -195,8 +198,8 @@ export default function StampaTotalePage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 16,
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 8,
               alignItems: "start",
             }}
           >
@@ -205,23 +208,24 @@ export default function StampaTotalePage() {
                 key={cliente}
                 style={{
                   border: "1px solid #000000",
-                  borderRadius: 6,
-                  padding: 12,
-                  minHeight: 220,
+                  borderRadius: 4,
+                  padding: 6,
+                  backgroundColor: "#ffffff",
                   breakInside: "avoid",
                   pageBreakInside: "avoid",
-                  backgroundColor: "#ffffff",
+                  minHeight: 0,
                 }}
               >
                 <div
                   style={{
                     fontWeight: "bold",
-                    fontSize: 18,
+                    fontSize: 12,
                     textTransform: "uppercase",
                     borderBottom: "1px solid #000000",
-                    paddingBottom: 8,
-                    marginBottom: 10,
+                    paddingBottom: 4,
+                    marginBottom: 4,
                     wordBreak: "break-word",
+                    lineHeight: 1.1,
                   }}
                 >
                   {cliente}
@@ -231,24 +235,31 @@ export default function StampaTotalePage() {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 6,
-                    fontSize: 15,
-                    lineHeight: 1.35,
+                    gap: 2,
+                    fontSize: 10,
+                    lineHeight: 1.1,
                   }}
                 >
                   {prodotti.map((p, i) => (
                     <div
                       key={`${cliente}-${i}`}
                       style={{
-                        paddingBottom: 4,
+                        paddingBottom: 2,
+                        marginBottom: 2,
                         borderBottom:
-                          i !== prodotti.length - 1 ? "1px dashed #d1d5db" : "none",
+                          i !== prodotti.length - 1 ? "1px dotted #cfcfcf" : "none",
                       }}
                     >
-                      <div style={{ fontWeight: 600, wordBreak: "break-word" }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          wordBreak: "break-word",
+                          lineHeight: 1.05,
+                        }}
+                      >
                         {p.nome}
                       </div>
-                      <div>
+                      <div style={{ lineHeight: 1.05 }}>
                         {p.quantita} {p.unita}
                       </div>
                     </div>
