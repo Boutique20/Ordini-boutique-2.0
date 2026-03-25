@@ -161,7 +161,7 @@ function getDataOperativa() {
 
 export default function OrdineClientePage() {
   const params = useParams();
-  const slug = params?.slug;
+  const token = params?.slug;
 
   const [cliente, setCliente] = useState(null);
   const [prodotti, setProdotti] = useState([]);
@@ -174,10 +174,10 @@ export default function OrdineClientePage() {
   const [unitaSelezionate, setUnitaSelezionate] = useState({});
 
   useEffect(() => {
-    if (slug) {
+    if (token) {
       caricaDati();
     }
-  }, [slug]);
+  }, [token]);
 
   async function caricaDati() {
     setCaricamento(true);
@@ -185,7 +185,7 @@ export default function OrdineClientePage() {
     const { data: clienteData, error: clienteError } = await supabase
       .from("clienti")
       .select("*")
-      .eq("slug", slug)
+      .eq("access_token", token)
       .single();
 
     if (clienteError || !clienteData) {
@@ -230,7 +230,8 @@ export default function OrdineClientePage() {
     const defaultUnita = {};
     for (const prodotto of prodottiData || []) {
       const nomeNorm = normalizeName(prodotto.nome);
-      const fallback = UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
+      const fallback =
+        UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
       const opzioni = mappaUnita[prodotto.id] || fallback;
       defaultUnita[prodotto.id] = opzioni[0];
       mappaUnita[prodotto.id] = opzioni;
@@ -352,7 +353,9 @@ export default function OrdineClientePage() {
       return;
     }
 
-    alert("Ordine ricevuto ✅ Stiamo verificando la disponibilità e procediamo con la preparazione.");
+    alert(
+      "Ordine ricevuto ✅ Stiamo verificando la disponibilità e procediamo con la preparazione."
+    );
 
     setQuantita({});
     setNote("");
@@ -360,7 +363,8 @@ export default function OrdineClientePage() {
     const resetUnita = {};
     for (const prodotto of prodotti) {
       const nomeNorm = normalizeName(prodotto.nome);
-      const fallback = UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
+      const fallback =
+        UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
       const opzioni = unitaProdotti[prodotto.id] || fallback;
       resetUnita[prodotto.id] = opzioni[0];
     }
@@ -448,7 +452,9 @@ export default function OrdineClientePage() {
                   {CATEGORY_LABELS[categoria] || categoria}
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                >
                   {prodottiPerCategoria[categoria].map((p) => {
                     const nomeNorm = normalizeName(p.nome);
                     const opzioniUnita =
@@ -496,7 +502,9 @@ export default function OrdineClientePage() {
                             step="0.1"
                             min="0"
                             value={quantita[p.id] || ""}
-                            onChange={(e) => aggiornaQuantita(p.id, e.target.value)}
+                            onChange={(e) =>
+                              aggiornaQuantita(p.id, e.target.value)
+                            }
                             placeholder="Qtà"
                             style={{
                               width: 95,
@@ -530,7 +538,9 @@ export default function OrdineClientePage() {
                           ) : (
                             <select
                               value={unitaSelezionate[p.id] || opzioniUnita[0]}
-                              onChange={(e) => aggiornaUnita(p.id, e.target.value)}
+                              onChange={(e) =>
+                                aggiornaUnita(p.id, e.target.value)
+                              }
                               style={{
                                 minWidth: 100,
                                 padding: "12px 10px",
