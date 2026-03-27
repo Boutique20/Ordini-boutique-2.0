@@ -261,10 +261,7 @@ export default function StampaRaffaelePage() {
                           lineHeight: 1.05,
                         }}
                       >
-                        {p.nome}
-                      </div>
-                      <div style={{ lineHeight: 1.05 }}>
-                        {p.quantita} {p.unita}
+                        {p.quantita} {p.unita} {p.nome}
                       </div>
                     </div>
                   ))}
