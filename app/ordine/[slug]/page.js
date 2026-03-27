@@ -384,43 +384,79 @@ export default function OrdineClientePage() {
       }}
     >
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
+      <div
+  style={{
+    background: "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 24,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      gap: 20,
+      textAlign: "left",
+    }}
+  >
+    <img
+      src="/logo-boutique.jpg"
+      alt="Logo Boutique dei Frutti di Mare"
+      style={{
+        width: 110,
+        height: 110,
+        objectFit: "contain",
+        borderRadius: 14,
+        backgroundColor: "#ffffff",
+        padding: 8,
+        flexShrink: 0,
+      }}
+    />
+
+    <div>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 34,
+          fontWeight: "bold",
+          color: "#ffffff",
+          letterSpacing: 0.3,
+          lineHeight: 1.1,
+        }}
+      >
+        Boutique 2.0
+      </h1>
+
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 17,
+          color: "#e0f2fe",
+          fontWeight: 600,
+        }}
+      >
+        Selezione giornaliera
+      </div>
+
+      {cliente && (
         <div
           style={{
-            backgroundColor: "rgba(15, 23, 42, 0.55)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            borderRadius: 18,
-            padding: 24,
-            marginBottom: 24,
-            boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
-            backdropFilter: "blur(8px)",
-            textAlign: "center",
+            marginTop: 10,
+            fontSize: 24,
+            fontWeight: "bold",
+            color: "#ffffff",
+            lineHeight: 1.1,
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 32,
-              fontWeight: "bold",
-              letterSpacing: 0.4,
-            }}
-          >
-            Selezione giornaliera Boutique 2.0
-          </h1>
-
-          {cliente && (
-            <h2
-              style={{
-                marginTop: 14,
-                marginBottom: 0,
-                fontSize: 22,
-                fontWeight: "bold",
-                color: "#dbeafe",
-              }}
-            >
-              {cliente.nome}
-            </h2>
-          )}
+          {cliente.nome}
         </div>
+      )}
+    </div>
+  </div>
+</div>
 
         <div
           style={{
