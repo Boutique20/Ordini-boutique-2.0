@@ -42,14 +42,6 @@ export default function HomePage() {
             Gestione Ordini
           </a>
 
-          {/* CLIENTE */}
-          <a
-            href="/ordine/4-gatti"
-            style={btn("#f59e0b")}
-          >
-            Pagina Ordine Cliente
-          </a>
-
           {/* STAMPE */}
           <a
             href="/stampa/andrea"
@@ -78,7 +70,7 @@ export default function HomePage() {
   );
 }
 
-/* FUNZIONE PER BOTTONI (PULIZIA CODICE) */
+/* FUNZIONE PER BOTTONI */
 function btn(color) {
   return {
     backgroundColor: color,
