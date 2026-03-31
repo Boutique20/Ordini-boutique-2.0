@@ -15,8 +15,83 @@ const CATEGORY_LABELS = {
 
 const CATEGORY_ORDER = ["C", "FDM", "FDM/L", "P", "P/L", "OST"];
 
+const ORDINE_NOMI = [
+  "SCAMPO 0/5",
+  "SCAMPO 5/10",
+  "SCAMPO 10/15",
+  "SCAMPO 15/20",
+  "SCAMPO 20/30",
+  "SCAMPO 30/40",
+
+  "ORATA 3/4",
+  "ORATA 4/6",
+  "ORATA 6/8",
+  "ORATA 1000",
+  "ORATA 1200",
+  "ORATA 1500",
+  "ORATA ORBETELLO",
+
+  "SPIGOLA 3/4",
+  "SPIGOLA 4/6",
+  "SPIGOLA 6/8",
+  "SPIGOLA 1000",
+  "SPIGOLA 1200",
+  "SPIGOLA 1500",
+  "SPIGOLA 2000+",
+  "SPIGOLA ORBETELLO",
+];
+
 function normalizeName(nome) {
   return (nome || "").replace(/\s+/g, " ").trim().toUpperCase();
+}
+
+function formatDataOra(dataString) {
+  if (!dataString) return "-";
+
+  const data = new Date(dataString);
+
+  return data.toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getOrdineNomeProdotto(nome) {
+  const nomeNorm = normalizeName(nome);
+  const indice = ORDINE_NOMI.findIndex((item) => item === nomeNorm);
+  return indice === -1 ? 999999 : indice;
+}
+
+function confrontaProdotti(a, b) {
+  const ordineA = getOrdineNomeProdotto(a.nome);
+  const ordineB = getOrdineNomeProdotto(b.nome);
+
+  if (ordineA !== ordineB) {
+    return ordineA - ordineB;
+  }
+
+  const ordineVisualA =
+    typeof a.ordine_visualizzazione === "number"
+      ? a.ordine_visualizzazione
+      : Number.isFinite(Number(a.ordine_visualizzazione))
+      ? Number(a.ordine_visualizzazione)
+      : 999999;
+
+  const ordineVisualB =
+    typeof b.ordine_visualizzazione === "number"
+      ? b.ordine_visualizzazione
+      : Number.isFinite(Number(b.ordine_visualizzazione))
+      ? Number(b.ordine_visualizzazione)
+      : 999999;
+
+  if (ordineVisualA !== ordineVisualB) {
+    return ordineVisualA - ordineVisualB;
+  }
+
+  return (a.nome || "").localeCompare(b.nome || "", "it");
 }
 
 const UNITA_FALLBACK = {
@@ -159,6 +234,21 @@ function getDataOperativa() {
   return `${y}-${m}-${d}`;
 }
 
+function getColoreStato(stato) {
+  switch (stato) {
+    case "bozza":
+      return "#94a3b8";
+    case "lavorazione":
+      return "#f59e0b";
+    case "pronto":
+      return "#3b82f6";
+    case "consegnato":
+      return "#22c55e";
+    default:
+      return "#94a3b8";
+  }
+}
+
 export default function OrdineClientePage() {
   const params = useParams();
   const token = params?.slug;
@@ -168,6 +258,9 @@ export default function OrdineClientePage() {
   const [note, setNote] = useState("");
   const [caricamento, setCaricamento] = useState(true);
   const [invioInCorso, setInvioInCorso] = useState(false);
+  const [storicoOrdini, setStoricoOrdini] = useState([]);
+  const [ricerca, setRicerca] = useState("");
+  const [mostraStorico, setMostraStorico] = useState(false);
 
   const [quantita, setQuantita] = useState({});
   const [unitaProdotti, setUnitaProdotti] = useState({});
@@ -199,6 +292,7 @@ export default function OrdineClientePage() {
       .from("prodotti_v2")
       .select("*")
       .order("categoria", { ascending: true })
+      .order("ordine_visualizzazione", { ascending: true, nullsFirst: false })
       .order("nome", { ascending: true });
 
     if (prodottiError) {
@@ -207,6 +301,8 @@ export default function OrdineClientePage() {
       setCaricamento(false);
       return;
     }
+
+    const prodottiOrdinati = [...(prodottiData || [])].sort(confrontaProdotti);
 
     const { data: unitaData, error: unitaError } = await supabase
       .from("prodotti_unita")
@@ -228,7 +324,7 @@ export default function OrdineClientePage() {
     }
 
     const defaultUnita = {};
-    for (const prodotto of prodottiData || []) {
+    for (const prodotto of prodottiOrdinati || []) {
       const nomeNorm = normalizeName(prodotto.nome);
       const fallback =
         UNITA_FALLBACK[nomeNorm] || [prodotto.unita_vendita || "KG"];
@@ -237,10 +333,71 @@ export default function OrdineClientePage() {
       mappaUnita[prodotto.id] = opzioni;
     }
 
+    const { data: ordiniData, error: ordiniError } = await supabase
+      .from("ordini")
+      .select("*")
+      .eq("cliente_id", clienteData.id)
+      .order("created_at", { ascending: false });
+
+    if (ordiniError) {
+      console.error("Errore storico ordini:", ordiniError);
+      alert(JSON.stringify(ordiniError, null, 2));
+      setCaricamento(false);
+      return;
+    }
+
+  // PRENDO SOLO GLI ID DEGLI ORDINI DEL CLIENTE
+const idsOrdini = (ordiniData || []).map((ordine) => ordine.id);
+
+let righeData = [];
+let righeError = null;
+
+// SE CI SONO ORDINI → PRENDO SOLO LE RIGHE RELATIVE
+if (idsOrdini.length > 0) {
+  const response = await supabase
+    .from("righe_ordine")
+    .select("*")
+    .in("ordine_id", idsOrdini);
+
+  righeData = response.data || [];
+  righeError = response.error;
+}
+
+// GESTIONE ERRORE
+if (righeError) {
+  console.error("Errore righe storico:", righeError);
+  alert(JSON.stringify(righeError, null, 2));
+  setCaricamento(false);
+  return;
+}
+    const prodottiMap = {};
+    prodottiOrdinati.forEach((p) => {
+      prodottiMap[p.id] = p;
+    });
+
+    const righePerOrdine = {};
+    (righeData || []).forEach((riga) => {
+      if (!righePerOrdine[riga.ordine_id]) {
+        righePerOrdine[riga.ordine_id] = [];
+      }
+
+      righePerOrdine[riga.ordine_id].push({
+        ...riga,
+        prodotto_nome:
+          prodottiMap[riga.prodotto_id]?.nome || "Prodotto sconosciuto",
+      });
+    });
+
+    const storicoFinale = (ordiniData || []).map((ordine) => ({
+      ...ordine,
+      righe: righePerOrdine[ordine.id] || [],
+    }));
+
     setCliente(clienteData);
-    setProdotti(prodottiData || []);
+    setProdotti(prodottiOrdinati);
     setUnitaProdotti(mappaUnita);
     setUnitaSelezionate(defaultUnita);
+    setStoricoOrdini(storicoFinale);
     setCaricamento(false);
   }
 
@@ -258,10 +415,20 @@ export default function OrdineClientePage() {
     }));
   }
 
+  const prodottiFiltrati = useMemo(() => {
+    const testo = ricerca.trim().toLowerCase();
+
+    if (!testo) return prodotti;
+
+    return prodotti.filter((prodotto) =>
+      (prodotto.nome || "").toLowerCase().includes(testo)
+    );
+  }, [prodotti, ricerca]);
+
   const prodottiPerCategoria = useMemo(() => {
     const gruppi = {};
 
-    for (const prodotto of prodotti) {
+    for (const prodotto of prodottiFiltrati) {
       const codice = prodotto.categoria || "ALTRO";
       if (!gruppi[codice]) gruppi[codice] = [];
       gruppi[codice].push(prodotto);
@@ -281,7 +448,7 @@ export default function OrdineClientePage() {
     }
 
     return gruppiOrdinati;
-  }, [prodotti]);
+  }, [prodottiFiltrati]);
 
   const riepilogoOrdine = useMemo(() => {
     return prodotti
@@ -370,6 +537,8 @@ export default function OrdineClientePage() {
     }
     setUnitaSelezionate(resetUnita);
 
+    await caricaDati();
+
     setInvioInCorso(false);
   }
 
@@ -384,79 +553,79 @@ export default function OrdineClientePage() {
       }}
     >
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
-      <div
-  style={{
-    background: "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      gap: 20,
-      textAlign: "left",
-    }}
-  >
-    <img
-      src="/logo-boutique.jpg"
-      alt="Logo Boutique dei Frutti di Mare"
-      style={{
-        width: 110,
-        height: 110,
-        objectFit: "contain",
-        borderRadius: 14,
-        backgroundColor: "#ffffff",
-        padding: 8,
-        flexShrink: 0,
-      }}
-    />
-
-    <div>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: 34,
-          fontWeight: "bold",
-          color: "#ffffff",
-          letterSpacing: 0.3,
-          lineHeight: 1.1,
-        }}
-      >
-        Boutique 2.0
-      </h1>
-
-      <div
-        style={{
-          marginTop: 6,
-          fontSize: 17,
-          color: "#e0f2fe",
-          fontWeight: 600,
-        }}
-      >
-        Selezione giornaliera
-      </div>
-
-      {cliente && (
         <div
           style={{
-            marginTop: 10,
-            fontSize: 24,
-            fontWeight: "bold",
-            color: "#ffffff",
-            lineHeight: 1.1,
+            background: "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
+            borderRadius: 18,
+            padding: 20,
+            marginBottom: 24,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
           }}
         >
-          {cliente.nome}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 20,
+              textAlign: "left",
+            }}
+          >
+            <img
+              src="/logo-boutique.jpg"
+              alt="Logo Boutique dei Frutti di Mare"
+              style={{
+                width: 110,
+                height: 110,
+                objectFit: "contain",
+                borderRadius: 14,
+                backgroundColor: "#ffffff",
+                padding: 8,
+                flexShrink: 0,
+              }}
+            />
+
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 34,
+                  fontWeight: "bold",
+                  color: "#ffffff",
+                  letterSpacing: 0.3,
+                  lineHeight: 1.1,
+                }}
+              >
+                Boutique 2.0
+              </h1>
+
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 17,
+                  color: "#e0f2fe",
+                  fontWeight: 600,
+                }}
+              >
+                Selezione giornaliera
+              </div>
+
+              {cliente && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: "#ffffff",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {cliente.nome}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  </div>
-</div>
 
         <div
           style={{
@@ -468,8 +637,41 @@ export default function OrdineClientePage() {
             backdropFilter: "blur(6px)",
           }}
         >
+          <div style={{ marginBottom: 24 }}>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: "#7dd3fc",
+              }}
+            >
+              Cerca prodotto
+            </div>
+
+            <input
+              type="text"
+              value={ricerca}
+              onChange={(e) => setRicerca(e.target.value)}
+              placeholder="Scrivi il nome del prodotto..."
+              style={{
+                width: "100%",
+                padding: 14,
+                borderRadius: 12,
+                border: "2px solid #475569",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
+                fontSize: 15,
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
           {caricamento ? (
             <p style={{ fontSize: 18 }}>Caricamento...</p>
+          ) : Object.keys(prodottiPerCategoria).length === 0 ? (
+            <p style={{ color: "#cbd5e1" }}>Nessun prodotto trovato.</p>
           ) : (
             Object.keys(prodottiPerCategoria).map((categoria) => (
               <div key={categoria} style={{ marginBottom: 34 }}>
@@ -689,6 +891,154 @@ export default function OrdineClientePage() {
           >
             {invioInCorso ? "Invio in corso..." : "Invia ordine"}
           </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: 24,
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 18,
+            padding: 22,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          <button
+            onClick={() => setMostraStorico(!mostraStorico)}
+            style={{
+              width: "100%",
+              padding: "14px 18px",
+              borderRadius: 12,
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: 16,
+              backgroundColor: "#1e293b",
+              color: "#ffffff",
+              marginBottom: mostraStorico ? 18 : 0,
+            }}
+          >
+            {mostraStorico
+              ? "Nascondi ordini precedenti"
+              : "Visualizza ordini precedenti"}
+          </button>
+
+          {mostraStorico && (
+            <>
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  marginBottom: 16,
+                  color: "#7dd3fc",
+                }}
+              >
+                Ultimi ordini inviati
+              </div>
+
+              {storicoOrdini.length === 0 ? (
+                <p style={{ color: "#cbd5e1", margin: 0 }}>
+                  Nessun ordine inviato al momento.
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {storicoOrdini.map((ordine) => (
+                    <div
+                      key={ordine.id}
+                      style={{
+                        borderRadius: 14,
+                        padding: 16,
+                        backgroundColor: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 12,
+                          flexWrap: "wrap",
+                          marginBottom: 12,
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 18,
+                              fontWeight: "bold",
+                              color: "#f8fafc",
+                              marginBottom: 6,
+                            }}
+                          >
+                            Ordine del {formatDataOra(ordine.created_at)}
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: 14,
+                              color: "#cbd5e1",
+                              marginBottom: 4,
+                            }}
+                          >
+                            Data operativa: {ordine.data_operativa || "-"}
+                          </div>
+
+                          {ordine.note_generali && (
+                            <div
+                              style={{
+                                fontSize: 14,
+                                color: "#cbd5e1",
+                              }}
+                            >
+                              Note: {ordine.note_generali}
+                            </div>
+                          )}
+                        </div>
+
+                        <div
+                          style={{
+                            backgroundColor: getColoreStato(ordine.stato),
+                            color: "#ffffff",
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            fontWeight: "bold",
+                            fontSize: 13,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {ordine.stato || "bozza"}
+                        </div>
+                      </div>
+
+                      {ordine.righe.length === 0 ? (
+                        <p style={{ color: "#cbd5e1", margin: 0 }}>
+                          Nessuna riga ordine.
+                        </p>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {ordine.righe.map((riga) => (
+                            <div
+                              key={riga.id}
+                              style={{
+                                fontSize: 15,
+                                color: "#e2e8f0",
+                                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                                paddingBottom: 6,
+                              }}
+                            >
+                              - {riga.quantita} {riga.unita} {riga.prodotto_nome}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
