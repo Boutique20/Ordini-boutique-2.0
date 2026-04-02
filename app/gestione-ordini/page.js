@@ -84,7 +84,7 @@ function getStileCard(stato) {
         backgroundColor: "#1e293b",
         border: "1px solid #334155",
       };
-  }
+    }
 }
 
 function bottoneLink(backgroundColor) {
@@ -144,9 +144,20 @@ export default function GestioneOrdiniPage() {
       return;
     }
 
-    const { data: righeData, error: righeError } = await supabase
-      .from("righe_ordine")
-      .select("*");
+    const idsOrdini = (ordiniData || []).map((ordine) => ordine.id);
+
+    let righeData = [];
+    let righeError = null;
+
+    if (idsOrdini.length > 0) {
+      const response = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
+
+      righeData = response.data || [];
+      righeError = response.error;
+    }
 
     if (righeError) {
       console.error("Errore caricamento righe:", righeError);
