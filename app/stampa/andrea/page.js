@@ -65,26 +65,42 @@ export default function StampaAndreaPage() {
       return;
     }
 
-    const { data: righe, error: righeError } = await supabase
-      .from("righe_ordine")
-      .select("*");
+    const idsOrdini = (ordini || []).map((o) => o.id);
 
-    if (righeError) {
-      console.error("Errore righe ordine:", righeError);
-      alert("Errore nel caricamento righe ordine");
-      setCaricamento(false);
-      return;
+    let righe = [];
+    if (idsOrdini.length > 0) {
+      const response = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
+
+      if (response.error) {
+        console.error("Errore righe ordine:", response.error);
+        alert("Errore nel caricamento righe ordine");
+        setCaricamento(false);
+        return;
+      }
+
+      righe = response.data || [];
     }
 
-    const { data: prodotti, error: prodottiError } = await supabase
-      .from("prodotti_v2")
-      .select("id, nome, stampa");
+    const idsProdotti = [...new Set(righe.map((r) => r.prodotto_id))];
 
-    if (prodottiError) {
-      console.error("Errore prodotti:", prodottiError);
-      alert("Errore nel caricamento prodotti");
-      setCaricamento(false);
-      return;
+    let prodotti = [];
+    if (idsProdotti.length > 0) {
+      const response = await supabase
+        .from("prodotti_v2")
+        .select("id, nome, stampa")
+        .in("id", idsProdotti);
+
+      if (response.error) {
+        console.error("Errore prodotti:", response.error);
+        alert("Errore nel caricamento prodotti");
+        setCaricamento(false);
+        return;
+      }
+
+      prodotti = response.data || [];
     }
 
     const clientiMap = {};
@@ -119,8 +135,6 @@ export default function StampaAndreaPage() {
             unita: r.unita,
           });
         });
-
-        risultato[clienteNome].sort((a, b) => a.nome.localeCompare(b.nome, "it"));
       }
     });
 
@@ -139,7 +153,7 @@ export default function StampaAndreaPage() {
   return (
     <div
       style={{
-        padding: 10,
+        padding: 12,
         fontFamily: "Arial, sans-serif",
         backgroundColor: "#ffffff",
         color: "#000000",
@@ -148,7 +162,7 @@ export default function StampaAndreaPage() {
     >
       <style>{`
         @page {
-          size: A4 portrait;
+          size: A4 landscape;
           margin: 8mm;
         }
 
@@ -165,18 +179,18 @@ export default function StampaAndreaPage() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1600, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 10,
+            marginBottom: 14,
             flexWrap: "wrap",
             gap: 8,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Andrea</h1>
+          <h1 style={{ margin: 0, fontSize: 22 }}>Stampa Andrea</h1>
 
           <button
             onClick={stampaPagina}
@@ -201,35 +215,30 @@ export default function StampaAndreaPage() {
         ) : (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 8,
-              alignItems: "start",
+              border: "1px solid #000000",
+              borderBottom: "none",
             }}
           >
             {Object.entries(dati).map(([cliente, prodotti]) => (
               <div
                 key={cliente}
                 style={{
-                  border: "1px solid #000000",
-                  borderRadius: 4,
-                  padding: 6,
-                  backgroundColor: "#ffffff",
-                  breakInside: "avoid",
-                  pageBreakInside: "avoid",
-                  minHeight: 0,
+                  display: "grid",
+                  gridTemplateColumns: "240px 1fr",
+                  borderBottom: "1px solid #000000",
+                  alignItems: "stretch",
                 }}
               >
                 <div
                   style={{
+                    padding: "10px 12px",
                     fontWeight: "bold",
-                    fontSize: 12,
-                    textTransform: "uppercase",
-                    borderBottom: "1px solid #000000",
-                    paddingBottom: 4,
-                    marginBottom: 4,
+                    borderRight: "1px solid #000000",
                     wordBreak: "break-word",
-                    lineHeight: 1.1,
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: 13,
+                    textTransform: "uppercase",
                   }}
                 >
                   {cliente}
@@ -237,33 +246,35 @@ export default function StampaAndreaPage() {
 
                 <div
                   style={{
+                    padding: "10px 12px",
                     display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    fontSize: 10,
-                    lineHeight: 1.1,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    rowGap: 8,
+                    columnGap: 0,
+                    fontSize: 13,
+                    lineHeight: 1.35,
                   }}
                 >
-                  {prodotti.map((p, i) => (
-                    <div
-                      key={`${cliente}-${i}`}
+                  {prodotti.map((p, index) => (
+                    <span
+                      key={`${cliente}-${index}`}
                       style={{
-                        paddingBottom: 2,
-                        marginBottom: 2,
-                        borderBottom:
-                          i !== prodotti.length - 1 ? "1px dotted #cfcfcf" : "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        marginRight: 12,
                       }}
                     >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          wordBreak: "break-word",
-                          lineHeight: 1.05,
-                        }}
-                      >
-                        {p.quantita} {p.unita} {p.nome}
-                      </div>
-                    </div>
+                      <strong style={{ marginRight: 4 }}>
+                        {p.quantita} {p.unita}
+                      </strong>
+                      <span>{p.nome}</span>
+                      {index !== prodotti.length - 1 && (
+                        <span style={{ marginLeft: 12, marginRight: 4 }}>
+                          •
+                        </span>
+                      )}
+                    </span>
                   ))}
                 </div>
               </div>
