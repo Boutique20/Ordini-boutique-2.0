@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
@@ -29,7 +29,7 @@ function getDataOperativaOggi() {
   return `${y}-${m}-${d}`;
 }
 
-export default function StampaAndreaPage() {
+function StampaAndreaContent() {
   const searchParams = useSearchParams();
   const dataParam = searchParams.get("data");
 
@@ -120,7 +120,8 @@ export default function StampaAndreaPage() {
     const risultato = {};
 
     (ordini || []).forEach((ordine) => {
-      const clienteNome = clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
+      const clienteNome =
+        clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
       const righeAndrea = righeOrdine.filter(
@@ -294,5 +295,13 @@ export default function StampaAndreaPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StampaAndreaPage() {
+  return (
+    <Suspense fallback={<p>Caricamento...</p>}>
+      <StampaAndreaContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
@@ -37,7 +37,7 @@ function chunkArray(array, size) {
   return risultato;
 }
 
-export default function StampaTotalePage() {
+function StampaTotaleContent() {
   const searchParams = useSearchParams();
   const dataParam = searchParams.get("data");
 
@@ -128,7 +128,8 @@ export default function StampaTotalePage() {
     const risultato = {};
 
     (ordini || []).forEach((ordine) => {
-      const clienteNome = clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
+      const clienteNome =
+        clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
       if (righeOrdine.length > 0) {
@@ -312,5 +313,13 @@ export default function StampaTotalePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StampaTotalePage() {
+  return (
+    <Suspense fallback={<p>Caricamento...</p>}>
+      <StampaTotaleContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
@@ -29,7 +29,7 @@ function getDataOperativaOggi() {
   return `${y}-${m}-${d}`;
 }
 
-export default function StampaRaffaelePage() {
+function StampaRaffaeleContent() {
   const searchParams = useSearchParams();
   const dataParam = searchParams.get("data");
 
@@ -120,7 +120,8 @@ export default function StampaRaffaelePage() {
     const risultato = {};
 
     (ordini || []).forEach((ordine) => {
-      const clienteNome = clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
+      const clienteNome =
+        clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
       const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
 
       const righeRaffaele = righeOrdine.filter(
@@ -140,7 +141,9 @@ export default function StampaRaffaelePage() {
           });
         });
 
-        risultato[clienteNome].sort((a, b) => a.nome.localeCompare(b.nome, "it"));
+        risultato[clienteNome].sort((a, b) =>
+          a.nome.localeCompare(b.nome, "it")
+        );
       }
     });
 
@@ -278,7 +281,9 @@ export default function StampaRaffaelePage() {
                         paddingBottom: 2,
                         marginBottom: 2,
                         borderBottom:
-                          i !== prodotti.length - 1 ? "1px dotted #cfcfcf" : "none",
+                          i !== prodotti.length - 1
+                            ? "1px dotted #cfcfcf"
+                            : "none",
                       }}
                     >
                       <div
@@ -299,5 +304,13 @@ export default function StampaRaffaelePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StampaRaffaelePage() {
+  return (
+    <Suspense fallback={<p>Caricamento...</p>}>
+      <StampaRaffaeleContent />
+    </Suspense>
   );
 }
