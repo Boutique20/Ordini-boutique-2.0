@@ -31,24 +31,24 @@ function getDataOperativaOggi() {
 
 export default function StampaRaffaelePage() {
   const searchParams = useSearchParams();
-  const dataDaUrl = searchParams.get("data");
+  const dataParam = searchParams.get("data");
 
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, [dataDaUrl]);
+  }, [dataParam]);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+    const dataOggi = dataParam || getDataOperativaOggi();
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataRiferimento)
+      .eq("data_operativa", dataOggi)
       .order("id", { ascending: true });
 
     if (ordiniError) {
@@ -156,7 +156,7 @@ export default function StampaRaffaelePage() {
     window.print();
   }
 
-  const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+  const dataRiferimento = dataParam || getDataOperativaOggi();
 
   return (
     <div

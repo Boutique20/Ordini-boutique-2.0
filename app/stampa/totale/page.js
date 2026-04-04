@@ -39,24 +39,24 @@ function chunkArray(array, size) {
 
 export default function StampaTotalePage() {
   const searchParams = useSearchParams();
-  const dataDaUrl = searchParams.get("data");
+  const dataParam = searchParams.get("data");
 
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, [dataDaUrl]);
+  }, [dataParam]);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+    const dataOggi = dataParam || getDataOperativaOggi();
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataRiferimento)
+      .eq("data_operativa", dataOggi)
       .order("id", { ascending: true });
 
     if (ordiniError) {
@@ -158,7 +158,7 @@ export default function StampaTotalePage() {
     window.print();
   }
 
-  const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+  const dataRiferimento = dataParam || getDataOperativaOggi();
 
   const clientiArray = Object.entries(dati).map(([cliente, prodotti]) => ({
     cliente,
@@ -208,9 +208,7 @@ export default function StampaTotalePage() {
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: 20 }}>
-              Stampa Totale Ordini
-            </h1>
+            <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Totale Ordini</h1>
             <div style={{ fontSize: 13, marginTop: 4 }}>
               Data operativa: {dataRiferimento}
             </div>
