@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 function getDataOperativaOggi() {
@@ -28,23 +29,34 @@ function getDataOperativaOggi() {
   return `${y}-${m}-${d}`;
 }
 
+function chunkArray(array, size) {
+  const risultato = [];
+  for (let i = 0; i < array.length; i += size) {
+    risultato.push(array.slice(i, i + size));
+  }
+  return risultato;
+}
+
 export default function StampaTotalePage() {
+  const searchParams = useSearchParams();
+  const dataDaUrl = searchParams.get("data");
+
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, []);
+  }, [dataDaUrl]);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataOggi = getDataOperativaOggi();
+    const dataRiferimento = dataDaUrl || getDataOperativaOggi();
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataOggi)
+      .eq("data_operativa", dataRiferimento)
       .order("id", { ascending: true });
 
     if (ordiniError) {
@@ -65,26 +77,42 @@ export default function StampaTotalePage() {
       return;
     }
 
-    const { data: righe, error: righeError } = await supabase
-      .from("righe_ordine")
-      .select("*");
+    const idsOrdini = (ordini || []).map((o) => o.id);
 
-    if (righeError) {
-      console.error("Errore righe ordine:", righeError);
-      alert("Errore nel caricamento righe ordine");
-      setCaricamento(false);
-      return;
+    let righe = [];
+    if (idsOrdini.length > 0) {
+      const response = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
+
+      if (response.error) {
+        console.error("Errore righe ordine:", response.error);
+        alert("Errore nel caricamento righe ordine");
+        setCaricamento(false);
+        return;
+      }
+
+      righe = response.data || [];
     }
 
-    const { data: prodotti, error: prodottiError } = await supabase
-      .from("prodotti_v2")
-      .select("id, nome");
+    const idsProdotti = [...new Set(righe.map((r) => r.prodotto_id))];
 
-    if (prodottiError) {
-      console.error("Errore prodotti:", prodottiError);
-      alert("Errore nel caricamento prodotti");
-      setCaricamento(false);
-      return;
+    let prodotti = [];
+    if (idsProdotti.length > 0) {
+      const response = await supabase
+        .from("prodotti_v2")
+        .select("id, nome")
+        .in("id", idsProdotti);
+
+      if (response.error) {
+        console.error("Errore prodotti:", response.error);
+        alert("Errore nel caricamento prodotti");
+        setCaricamento(false);
+        return;
+      }
+
+      prodotti = response.data || [];
     }
 
     const clientiMap = {};
@@ -115,8 +143,6 @@ export default function StampaTotalePage() {
             unita: r.unita,
           });
         });
-
-        risultato[clienteNome].sort((a, b) => a.nome.localeCompare(b.nome, "it"));
       }
     });
 
@@ -131,6 +157,15 @@ export default function StampaTotalePage() {
   function stampaPagina() {
     window.print();
   }
+
+  const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+
+  const clientiArray = Object.entries(dati).map(([cliente, prodotti]) => ({
+    cliente,
+    prodotti,
+  }));
+
+  const gruppi = chunkArray(clientiArray, 3);
 
   return (
     <div
@@ -172,7 +207,14 @@ export default function StampaTotalePage() {
             gap: 8,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Totale Ordini</h1>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 20 }}>
+              Stampa Totale Ordini
+            </h1>
+            <div style={{ fontSize: 13, marginTop: 4 }}>
+              Data operativa: {dataRiferimento}
+            </div>
+          </div>
 
           <button
             onClick={stampaPagina}
@@ -192,76 +234,80 @@ export default function StampaTotalePage() {
 
         {caricamento ? (
           <p>Caricamento dati...</p>
-        ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine nella giornata operativa corrente.</p>
+        ) : clientiArray.length === 0 ? (
+          <p>Nessun ordine nella data selezionata.</p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 8,
-              alignItems: "start",
-            }}
-          >
-            {Object.entries(dati).map(([cliente, prodotti]) => (
+          <div>
+            {gruppi.map((gruppo, indexGruppo) => (
               <div
-                key={cliente}
+                key={indexGruppo}
                 style={{
-                  border: "1px solid #000000",
-                  borderRadius: 4,
-                  padding: 6,
-                  backgroundColor: "#ffffff",
-                  breakInside: "avoid",
-                  pageBreakInside: "avoid",
-                  minHeight: 0,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 8,
+                  marginBottom: 8,
+                  alignItems: "start",
                 }}
               >
-                <div
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: 12,
-                    textTransform: "uppercase",
-                    borderBottom: "1px solid #000000",
-                    paddingBottom: 4,
-                    marginBottom: 4,
-                    wordBreak: "break-word",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {cliente}
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    fontSize: 10,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {prodotti.map((p, i) => (
+                {gruppo.map((blocco) => (
+                  <div
+                    key={blocco.cliente}
+                    style={{
+                      border: "1px solid #000000",
+                      minHeight: 120,
+                      breakInside: "avoid",
+                      pageBreakInside: "avoid",
+                    }}
+                  >
                     <div
-                      key={`${cliente}-${i}`}
                       style={{
-                        paddingBottom: 2,
-                        marginBottom: 2,
-                        borderBottom:
-                          i !== prodotti.length - 1 ? "1px dotted #cfcfcf" : "none",
+                        borderBottom: "1px solid #000000",
+                        padding: "8px 10px",
+                        fontWeight: "bold",
+                        fontSize: 12,
+                        textTransform: "uppercase",
+                        wordBreak: "break-word",
+                        minHeight: 38,
+                        display: "flex",
+                        alignItems: "center",
                       }}
                     >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          wordBreak: "break-word",
-                          lineHeight: 1.05,
-                        }}
-                      >
-                        {p.quantita} {p.unita} {p.nome}
-                      </div>
+                      {blocco.cliente}
                     </div>
+
+                    <div
+                      style={{
+                        padding: "8px 10px",
+                        fontSize: 11,
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {blocco.prodotti.map((p, i) => (
+                        <div
+                          key={`${blocco.cliente}-${i}`}
+                          style={{
+                            marginBottom: 4,
+                            paddingBottom: 4,
+                            borderBottom:
+                              i !== blocco.prodotti.length - 1
+                                ? "1px dotted #cfcfcf"
+                                : "none",
+                          }}
+                        >
+                          <strong>
+                            {p.quantita} {p.unita}
+                          </strong>{" "}
+                          {p.nome}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {gruppo.length < 3 &&
+                  Array.from({ length: 3 - gruppo.length }).map((_, i) => (
+                    <div key={`vuoto-${indexGruppo}-${i}`} />
                   ))}
-                </div>
               </div>
             ))}
           </div>

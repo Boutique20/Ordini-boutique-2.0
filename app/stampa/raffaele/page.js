@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 function getDataOperativaOggi() {
@@ -29,22 +30,25 @@ function getDataOperativaOggi() {
 }
 
 export default function StampaRaffaelePage() {
+  const searchParams = useSearchParams();
+  const dataDaUrl = searchParams.get("data");
+
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, []);
+  }, [dataDaUrl]);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataOggi = getDataOperativaOggi();
+    const dataRiferimento = dataDaUrl || getDataOperativaOggi();
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataOggi)
+      .eq("data_operativa", dataRiferimento)
       .order("id", { ascending: true });
 
     if (ordiniError) {
@@ -65,26 +69,42 @@ export default function StampaRaffaelePage() {
       return;
     }
 
-    const { data: righe, error: righeError } = await supabase
-      .from("righe_ordine")
-      .select("*");
+    const idsOrdini = (ordini || []).map((o) => o.id);
 
-    if (righeError) {
-      console.error("Errore righe ordine:", righeError);
-      alert("Errore nel caricamento righe ordine");
-      setCaricamento(false);
-      return;
+    let righe = [];
+    if (idsOrdini.length > 0) {
+      const response = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
+
+      if (response.error) {
+        console.error("Errore righe ordine:", response.error);
+        alert("Errore nel caricamento righe ordine");
+        setCaricamento(false);
+        return;
+      }
+
+      righe = response.data || [];
     }
 
-    const { data: prodotti, error: prodottiError } = await supabase
-      .from("prodotti_v2")
-      .select("id, nome, stampa");
+    const idsProdotti = [...new Set(righe.map((r) => r.prodotto_id))];
 
-    if (prodottiError) {
-      console.error("Errore prodotti:", prodottiError);
-      alert("Errore nel caricamento prodotti");
-      setCaricamento(false);
-      return;
+    let prodotti = [];
+    if (idsProdotti.length > 0) {
+      const response = await supabase
+        .from("prodotti_v2")
+        .select("id, nome, stampa")
+        .in("id", idsProdotti);
+
+      if (response.error) {
+        console.error("Errore prodotti:", response.error);
+        alert("Errore nel caricamento prodotti");
+        setCaricamento(false);
+        return;
+      }
+
+      prodotti = response.data || [];
     }
 
     const clientiMap = {};
@@ -136,6 +156,8 @@ export default function StampaRaffaelePage() {
     window.print();
   }
 
+  const dataRiferimento = dataDaUrl || getDataOperativaOggi();
+
   return (
     <div
       style={{
@@ -176,7 +198,12 @@ export default function StampaRaffaelePage() {
             gap: 8,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Raffaele</h1>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Raffaele</h1>
+            <div style={{ fontSize: 13, marginTop: 4 }}>
+              Data operativa: {dataRiferimento}
+            </div>
+          </div>
 
           <button
             onClick={stampaPagina}
@@ -197,7 +224,7 @@ export default function StampaRaffaelePage() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun dato per Raffaele nella giornata operativa corrente.</p>
+          <p>Nessun dato per Raffaele nella data selezionata.</p>
         ) : (
           <div
             style={{

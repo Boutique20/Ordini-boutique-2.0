@@ -84,7 +84,7 @@ function getStileCard(stato) {
         backgroundColor: "#1e293b",
         border: "1px solid #334155",
       };
-    }
+  }
 }
 
 function bottoneLink(backgroundColor) {
@@ -278,6 +278,8 @@ export default function GestioneOrdiniPage() {
   }
 
   const dataOperativaOggi = getDataOperativaOggi();
+  const dataRiferimento = filtroData || dataInput || dataOperativaOggi;
+  const dataSelezionataPerStampa = dataRiferimento;
 
   const ordiniFiltrati = useMemo(() => {
     return ordini.filter((o) => {
@@ -295,12 +297,12 @@ export default function GestioneOrdiniPage() {
   }, [ordini, filtroCliente, filtroData, filtroStato]);
 
   const ordiniOggi = useMemo(() => {
-    return ordiniFiltrati.filter((o) => o.data_operativa === dataOperativaOggi);
-  }, [ordiniFiltrati, dataOperativaOggi]);
+    return ordiniFiltrati.filter((o) => o.data_operativa === dataRiferimento);
+  }, [ordiniFiltrati, dataRiferimento]);
 
   const storicoOrdini = useMemo(() => {
-    return ordiniFiltrati.filter((o) => o.data_operativa !== dataOperativaOggi);
-  }, [ordiniFiltrati, dataOperativaOggi]);
+    return ordiniFiltrati.filter((o) => o.data_operativa !== dataRiferimento);
+  }, [ordiniFiltrati, dataRiferimento]);
 
   function renderOrdine(ordine) {
     const stileCard = getStileCard(ordine.stato);
@@ -516,15 +518,24 @@ export default function GestioneOrdiniPage() {
               flexWrap: "wrap",
             }}
           >
-            <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
+            <a
+              href={`/stampa/andrea?data=${dataSelezionataPerStampa}`}
+              style={bottoneLink("#16a34a")}
+            >
               Stampa Andrea
             </a>
 
-            <a href="/stampa/raffaele" style={bottoneLink("#f97316")}>
+            <a
+              href={`/stampa/raffaele?data=${dataSelezionataPerStampa}`}
+              style={bottoneLink("#f97316")}
+            >
               Stampa Raffaele
             </a>
 
-            <a href="/stampa/totale" style={bottoneLink("#0ea5e9")}>
+            <a
+              href={`/stampa/totale?data=${dataSelezionataPerStampa}`}
+              style={bottoneLink("#0ea5e9")}
+            >
               Stampa Totale
             </a>
 
@@ -640,13 +651,13 @@ export default function GestioneOrdiniPage() {
               marginBottom: 14,
             }}
           >
-            Ordini di oggi (scadenza 05:00)
+            Ordini del giorno selezionato
           </div>
 
           {caricamento ? (
             <p>Caricamento ordini...</p>
           ) : ordiniOggi.length === 0 ? (
-            <p>Nessun ordine per la giornata operativa corrente.</p>
+            <p>Nessun ordine per la data selezionata.</p>
           ) : (
             ordiniOggi.map(renderOrdine)
           )}
