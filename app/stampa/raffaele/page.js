@@ -269,17 +269,17 @@ function StampaRaffaeleContent() {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 2,
-                    fontSize: 10,
-                    lineHeight: 1.1,
+                    gap: 10,
+                    fontSize: 14,
+                    lineHeight: 1.6,
                   }}
                 >
                   {prodotti.map((p, i) => (
                     <div
                       key={`${cliente}-${i}`}
                       style={{
-                        paddingBottom: 2,
-                        marginBottom: 2,
+                        paddingBottom: 6,
+                        marginBottom: 8,
                         borderBottom:
                           i !== prodotti.length - 1
                             ? "1px dotted #cfcfcf"
