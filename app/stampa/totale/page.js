@@ -57,6 +57,7 @@ function StampaTotaleContent() {
       .from("ordini")
       .select("*")
       .eq("data_operativa", dataOggi)
+      .eq("stato", "bozza")
       .order("id", { ascending: true });
 
     if (ordiniError) {
