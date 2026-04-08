@@ -84,7 +84,7 @@ function getStileCard(stato) {
         backgroundColor: "#1e293b",
         border: "1px solid #334155",
       };
-  }
+    }
 }
 
 function bottoneLink(backgroundColor) {
@@ -279,7 +279,6 @@ export default function GestioneOrdiniPage() {
 
   const dataOperativaOggi = getDataOperativaOggi();
   const dataRiferimento = filtroData || dataInput || dataOperativaOggi;
-  const dataSelezionataPerStampa = dataRiferimento;
 
   const ordiniFiltrati = useMemo(() => {
     return ordini.filter((o) => {
@@ -518,24 +517,15 @@ export default function GestioneOrdiniPage() {
               flexWrap: "wrap",
             }}
           >
-            <a
-              href={`/stampa/andrea?data=${dataSelezionataPerStampa}`}
-              style={bottoneLink("#16a34a")}
-            >
+            <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
               Stampa Andrea
             </a>
 
-            <a
-              href={`/stampa/raffaele?data=${dataSelezionataPerStampa}`}
-              style={bottoneLink("#f97316")}
-            >
+            <a href="/stampa/raffaele" style={bottoneLink("#f97316")}>
               Stampa Raffaele
             </a>
 
-            <a
-              href={`/stampa/totale?data=${dataSelezionataPerStampa}`}
-              style={bottoneLink("#0ea5e9")}
-            >
+            <a href="/stampa/totale" style={bottoneLink("#0ea5e9")}>
               Stampa Totale
             </a>
 
@@ -553,6 +543,33 @@ export default function GestioneOrdiniPage() {
             >
               Aggiorna
             </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#111827",
+            border: "1px solid #334155",
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 22,
+            lineHeight: 1.5,
+          }}
+        >
+          <div style={{ fontWeight: "bold", marginBottom: 6, color: "#7dd3fc" }}>
+            Regola operativa stati
+          </div>
+          <div>
+            <strong>BOZZA</strong> = ordine nuovo da stampare
+          </div>
+          <div>
+            <strong>LAVORAZIONE</strong> = ordine già preso in carico / già stampato
+          </div>
+          <div>
+            <strong>PRONTO</strong> = ordine preparato
+          </div>
+          <div>
+            <strong>CONSEGNATO</strong> = ordine chiuso
           </div>
         </div>
 

@@ -76,15 +76,23 @@ export default function SchedaClientePage() {
       return;
     }
 
-    const { data: righeData, error: righeError } = await supabase
-      .from("righe_ordine")
-      .select("*");
+    const idsOrdini = (ordiniData || []).map((ordine) => ordine.id);
 
-    if (righeError) {
-      console.error("Errore caricamento righe ordine:", righeError);
-      alert(JSON.stringify(righeError, null, 2));
-      setCaricamento(false);
-      return;
+    let righeData = [];
+    if (idsOrdini.length > 0) {
+      const { data, error } = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
+
+      if (error) {
+        console.error("Errore caricamento righe ordine:", error);
+        alert(JSON.stringify(error, null, 2));
+        setCaricamento(false);
+        return;
+      }
+
+      righeData = data || [];
     }
 
     const { data: prodottiData, error: prodottiError } = await supabase

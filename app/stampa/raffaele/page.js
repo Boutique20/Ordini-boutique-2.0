@@ -1,54 +1,22 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
-function getDataOperativaOggi() {
-  const now = new Date();
-
-  const roma = new Date(
-    now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
-  );
-
-  const anno = roma.getFullYear();
-  const mese = roma.getMonth();
-  const giorno = roma.getDate();
-  const ore = roma.getHours();
-
-  let dataBase = new Date(anno, mese, giorno);
-
-  if (ore < 5) {
-    dataBase.setDate(dataBase.getDate() - 1);
-  }
-
-  const y = dataBase.getFullYear();
-  const m = String(dataBase.getMonth() + 1).padStart(2, "0");
-  const d = String(dataBase.getDate()).padStart(2, "0");
-
-  return `${y}-${m}-${d}`;
-}
-
 function StampaRaffaeleContent() {
-  const searchParams = useSearchParams();
-  const dataParam = searchParams.get("data");
-
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, [dataParam]);
+  }, []);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataOggi = dataParam || getDataOperativaOggi();
-
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataOggi)
       .eq("stato", "bozza")
       .order("id", { ascending: true });
 
@@ -160,8 +128,6 @@ function StampaRaffaeleContent() {
     window.print();
   }
 
-  const dataRiferimento = dataParam || getDataOperativaOggi();
-
   return (
     <div
       style={{
@@ -203,10 +169,9 @@ function StampaRaffaeleContent() {
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Raffaele</h1>
-            <div style={{ fontSize: 13, marginTop: 4 }}>
-              Data operativa: {dataRiferimento}
-            </div>
+            <h1 style={{ margin: 0, fontSize: 20 }}>
+              Stampa Raffaele - Ordini in bozza
+            </h1>
           </div>
 
           <button
@@ -228,7 +193,7 @@ function StampaRaffaeleContent() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun dato per Raffaele nella data selezionata.</p>
+          <p>Nessun ordine in bozza per Raffaele.</p>
         ) : (
           <div
             style={{

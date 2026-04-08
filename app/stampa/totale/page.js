@@ -1,33 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
-
-function getDataOperativaOggi() {
-  const now = new Date();
-
-  const roma = new Date(
-    now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
-  );
-
-  const anno = roma.getFullYear();
-  const mese = roma.getMonth();
-  const giorno = roma.getDate();
-  const ore = roma.getHours();
-
-  let dataBase = new Date(anno, mese, giorno);
-
-  if (ore < 5) {
-    dataBase.setDate(dataBase.getDate() - 1);
-  }
-
-  const y = dataBase.getFullYear();
-  const m = String(dataBase.getMonth() + 1).padStart(2, "0");
-  const d = String(dataBase.getDate()).padStart(2, "0");
-
-  return `${y}-${m}-${d}`;
-}
 
 function chunkArray(array, size) {
   const risultato = [];
@@ -38,25 +12,19 @@ function chunkArray(array, size) {
 }
 
 function StampaTotaleContent() {
-  const searchParams = useSearchParams();
-  const dataParam = searchParams.get("data");
-
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     caricaDati();
-  }, [dataParam]);
+  }, []);
 
   async function caricaDati() {
     setCaricamento(true);
 
-    const dataOggi = dataParam || getDataOperativaOggi();
-
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("data_operativa", dataOggi)
       .eq("stato", "bozza")
       .order("id", { ascending: true });
 
@@ -131,7 +99,10 @@ function StampaTotaleContent() {
     (ordini || []).forEach((ordine) => {
       const clienteNome =
         clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
-      const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
+
+      const righeOrdine = (righe || []).filter(
+        (r) => r.ordine_id === ordine.id
+      );
 
       if (righeOrdine.length > 0) {
         if (!risultato[clienteNome]) {
@@ -149,7 +120,9 @@ function StampaTotaleContent() {
     });
 
     const risultatoOrdinato = Object.fromEntries(
-      Object.entries(risultato).sort((a, b) => a[0].localeCompare(b[0], "it"))
+      Object.entries(risultato).sort((a, b) =>
+        a[0].localeCompare(b[0], "it")
+      )
     );
 
     setDati(risultatoOrdinato);
@@ -159,8 +132,6 @@ function StampaTotaleContent() {
   function stampaPagina() {
     window.print();
   }
-
-  const dataRiferimento = dataParam || getDataOperativaOggi();
 
   const clientiArray = Object.entries(dati).map(([cliente, prodotti]) => ({
     cliente,
@@ -209,12 +180,9 @@ function StampaTotaleContent() {
             gap: 8,
           }}
         >
-          <div>
-            <h1 style={{ margin: 0, fontSize: 20 }}>Stampa Totale Ordini</h1>
-            <div style={{ fontSize: 13, marginTop: 4 }}>
-              Data operativa: {dataRiferimento}
-            </div>
-          </div>
+          <h1 style={{ margin: 0, fontSize: 20 }}>
+            Stampa Totale - Ordini in bozza
+          </h1>
 
           <button
             onClick={stampaPagina}
@@ -235,7 +203,7 @@ function StampaTotaleContent() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : clientiArray.length === 0 ? (
-          <p>Nessun ordine nella data selezionata.</p>
+          <p>Nessun ordine in bozza.</p>
         ) : (
           <div>
             {gruppi.map((gruppo, indexGruppo) => (
@@ -255,8 +223,6 @@ function StampaTotaleContent() {
                     style={{
                       border: "1px solid #000000",
                       minHeight: 120,
-                      breakInside: "avoid",
-                      pageBreakInside: "avoid",
                     }}
                   >
                     <div
@@ -266,10 +232,6 @@ function StampaTotaleContent() {
                         fontWeight: "bold",
                         fontSize: 12,
                         textTransform: "uppercase",
-                        wordBreak: "break-word",
-                        minHeight: 38,
-                        display: "flex",
-                        alignItems: "center",
                       }}
                     >
                       {blocco.cliente}
@@ -283,17 +245,7 @@ function StampaTotaleContent() {
                       }}
                     >
                       {blocco.prodotti.map((p, i) => (
-                        <div
-                          key={`${blocco.cliente}-${i}`}
-                          style={{
-                            marginBottom: 4,
-                            paddingBottom: 4,
-                            borderBottom:
-                              i !== blocco.prodotti.length - 1
-                                ? "1px dotted #cfcfcf"
-                                : "none",
-                          }}
-                        >
+                        <div key={`${blocco.cliente}-${i}`}>
                           <strong>
                             {p.quantita} {p.unita}
                           </strong>{" "}
@@ -303,11 +255,6 @@ function StampaTotaleContent() {
                     </div>
                   </div>
                 ))}
-
-                {gruppo.length < 3 &&
-                  Array.from({ length: 3 - gruppo.length }).map((_, i) => (
-                    <div key={`vuoto-${indexGruppo}-${i}`} />
-                  ))}
               </div>
             ))}
           </div>
