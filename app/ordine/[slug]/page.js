@@ -265,6 +265,7 @@ export default function OrdineClientePage() {
   const [quantita, setQuantita] = useState({});
   const [unitaProdotti, setUnitaProdotti] = useState({});
   const [unitaSelezionate, setUnitaSelezionate] = useState({});
+  const [noteProdotti, setNoteProdotti] = useState({});
 
   useEffect(() => {
     if (token) {
@@ -346,30 +347,28 @@ export default function OrdineClientePage() {
       return;
     }
 
-  // PRENDO SOLO GLI ID DEGLI ORDINI DEL CLIENTE
-const idsOrdini = (ordiniData || []).map((ordine) => ordine.id);
+    const idsOrdini = (ordiniData || []).map((ordine) => ordine.id);
 
-let righeData = [];
-let righeError = null;
+    let righeData = [];
+    let righeError = null;
 
-// SE CI SONO ORDINI → PRENDO SOLO LE RIGHE RELATIVE
-if (idsOrdini.length > 0) {
-  const response = await supabase
-    .from("righe_ordine")
-    .select("*")
-    .in("ordine_id", idsOrdini);
+    if (idsOrdini.length > 0) {
+      const response = await supabase
+        .from("righe_ordine")
+        .select("*")
+        .in("ordine_id", idsOrdini);
 
-  righeData = response.data || [];
-  righeError = response.error;
-}
+      righeData = response.data || [];
+      righeError = response.error;
+    }
 
-// GESTIONE ERRORE
-if (righeError) {
-  console.error("Errore righe storico:", righeError);
-  alert(JSON.stringify(righeError, null, 2));
-  setCaricamento(false);
-  return;
-}
+    if (righeError) {
+      console.error("Errore righe storico:", righeError);
+      alert(JSON.stringify(righeError, null, 2));
+      setCaricamento(false);
+      return;
+    }
+
     const prodottiMap = {};
     prodottiOrdinati.forEach((p) => {
       prodottiMap[p.id] = p;
@@ -385,6 +384,7 @@ if (righeError) {
         ...riga,
         prodotto_nome:
           prodottiMap[riga.prodotto_id]?.nome || "Prodotto sconosciuto",
+        note: riga.note || "",
       });
     });
 
@@ -410,6 +410,13 @@ if (righeError) {
 
   function aggiornaUnita(prodottoId, valore) {
     setUnitaSelezionate((prev) => ({
+      ...prev,
+      [prodottoId]: valore,
+    }));
+  }
+
+  function aggiornaNotaProdotto(prodottoId, valore) {
+    setNoteProdotti((prev) => ({
       ...prev,
       [prodottoId]: valore,
     }));
@@ -461,8 +468,9 @@ if (righeError) {
         nome: p.nome,
         quantita: Number(quantita[p.id]),
         unita: unitaSelezionate[p.id] || "KG",
+        note: noteProdotti[p.id] || "",
       }));
-  }, [prodotti, quantita, unitaSelezionate]);
+  }, [prodotti, quantita, unitaSelezionate, noteProdotti]);
 
   async function inviaOrdine() {
     if (!cliente) {
@@ -506,7 +514,7 @@ if (righeError) {
       prodotto_id: r.id,
       quantita: r.quantita,
       unita: r.unita,
-      note: null,
+      note: r.note || null,
     }));
 
     const { error: righeError } = await supabase
@@ -526,6 +534,7 @@ if (righeError) {
 
     setQuantita({});
     setNote("");
+    setNoteProdotti({});
 
     const resetUnita = {};
     for (const prodotto of prodotti) {
@@ -704,24 +713,18 @@ if (righeError) {
                       <div
                         key={p.id}
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 14,
                           padding: "12px 14px",
                           borderRadius: 12,
                           border: "1px solid rgba(255,255,255,0.10)",
                           backgroundColor: "rgba(255,255,255,0.04)",
-                          flexWrap: "wrap",
                         }}
                       >
                         <div
                           style={{
-                            flex: 1,
-                            minWidth: 240,
                             fontSize: 17,
                             fontWeight: 600,
                             color: "#f8fafc",
+                            marginBottom: 10,
                           }}
                         >
                           {p.nome}
@@ -730,74 +733,104 @@ if (righeError) {
                         <div
                           style={{
                             display: "flex",
+                            justifyContent: "space-between",
                             alignItems: "center",
-                            gap: 10,
+                            gap: 14,
                             flexWrap: "wrap",
                           }}
                         >
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            value={quantita[p.id] || ""}
-                            onChange={(e) =>
-                              aggiornaQuantita(p.id, e.target.value)
-                            }
-                            placeholder="Qtà"
+                          <div
                             style={{
-                              width: 95,
-                              padding: "12px 10px",
-                              borderRadius: 10,
-                              border: "2px solid #475569",
-                              backgroundColor: "#0f172a",
-                              color: "#ffffff",
-                              fontSize: 16,
-                              textAlign: "center",
-                              outline: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              flexWrap: "wrap",
                             }}
-                          />
-
-                          {opzioniUnita.length === 1 ? (
-                            <div
-                              style={{
-                                minWidth: 72,
-                                padding: "12px 10px",
-                                borderRadius: 10,
-                                border: "2px solid #334155",
-                                backgroundColor: "#1e293b",
-                                color: "#e2e8f0",
-                                textAlign: "center",
-                                fontWeight: "bold",
-                                fontSize: 15,
-                              }}
-                            >
-                              {opzioniUnita[0]}
-                            </div>
-                          ) : (
-                            <select
-                              value={unitaSelezionate[p.id] || opzioniUnita[0]}
+                          >
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={quantita[p.id] || ""}
                               onChange={(e) =>
-                                aggiornaUnita(p.id, e.target.value)
+                                aggiornaQuantita(p.id, e.target.value)
                               }
+                              placeholder="Qtà"
                               style={{
-                                minWidth: 100,
+                                width: 95,
                                 padding: "12px 10px",
                                 borderRadius: 10,
                                 border: "2px solid #475569",
                                 backgroundColor: "#0f172a",
                                 color: "#ffffff",
-                                fontSize: 15,
-                                fontWeight: "bold",
+                                fontSize: 16,
+                                textAlign: "center",
                                 outline: "none",
                               }}
-                            >
-                              {opzioniUnita.map((u) => (
-                                <option key={u} value={u}>
-                                  {u}
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                            />
+
+                            {opzioniUnita.length === 1 ? (
+                              <div
+                                style={{
+                                  minWidth: 72,
+                                  padding: "12px 10px",
+                                  borderRadius: 10,
+                                  border: "2px solid #334155",
+                                  backgroundColor: "#1e293b",
+                                  color: "#e2e8f0",
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  fontSize: 15,
+                                }}
+                              >
+                                {opzioniUnita[0]}
+                              </div>
+                            ) : (
+                              <select
+                                value={unitaSelezionate[p.id] || opzioniUnita[0]}
+                                onChange={(e) =>
+                                  aggiornaUnita(p.id, e.target.value)
+                                }
+                                style={{
+                                  minWidth: 100,
+                                  padding: "12px 10px",
+                                  borderRadius: 10,
+                                  border: "2px solid #475569",
+                                  backgroundColor: "#0f172a",
+                                  color: "#ffffff",
+                                  fontSize: 15,
+                                  fontWeight: "bold",
+                                  outline: "none",
+                                }}
+                              >
+                                {opzioniUnita.map((u) => (
+                                  <option key={u} value={u}>
+                                    {u}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+
+                          <input
+                            type="text"
+                            value={noteProdotti[p.id] || ""}
+                            onChange={(e) =>
+                              aggiornaNotaProdotto(p.id, e.target.value)
+                            }
+                            placeholder="Nota per questo prodotto"
+                            style={{
+                              flex: 1,
+                              minWidth: 260,
+                              padding: "12px 12px",
+                              borderRadius: 10,
+                              border: "2px solid #475569",
+                              backgroundColor: "#0f172a",
+                              color: "#ffffff",
+                              fontSize: 15,
+                              outline: "none",
+                            }}
+                          />
                         </div>
                       </div>
                     );
@@ -864,6 +897,7 @@ if (righeError) {
                 {riepilogoOrdine.map((riga) => (
                   <div key={riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
                     - {riga.nome} → {riga.quantita} {riga.unita}
+                    {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
                 ))}
               </div>
@@ -1029,6 +1063,7 @@ if (righeError) {
                               }}
                             >
                               - {riga.quantita} {riga.unita} {riga.prodotto_nome}
+                              {riga.note ? ` | Nota: ${riga.note}` : ""}
                             </div>
                           ))}
                         </div>

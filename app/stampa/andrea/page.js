@@ -107,6 +107,7 @@ function StampaAndreaContent() {
             nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
             quantita: r.quantita,
             unita: r.unita,
+            note: r.note || "",
           });
         });
       }
@@ -241,12 +242,18 @@ function StampaAndreaContent() {
                         display: "inline-flex",
                         alignItems: "center",
                         marginRight: 12,
+                        flexWrap: "wrap",
                       }}
                     >
                       <strong style={{ marginRight: 4 }}>
                         {p.quantita} {p.unita}
                       </strong>
                       <span>{p.nome}</span>
+                      {p.note ? (
+                        <span style={{ marginLeft: 6, fontStyle: "italic" }}>
+                          — Nota: {p.note}
+                        </span>
+                      ) : null}
                       {index !== prodotti.length - 1 && (
                         <span style={{ marginLeft: 12, marginRight: 4 }}>
                           •
