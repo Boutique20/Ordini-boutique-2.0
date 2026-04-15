@@ -91,7 +91,10 @@ function StampaRaffaeleContent() {
     (ordini || []).forEach((ordine) => {
       const clienteNome =
         clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
-      const righeOrdine = (righe || []).filter((r) => r.ordine_id === ordine.id);
+
+      const righeOrdine = (righe || []).filter(
+        (r) => r.ordine_id === ordine.id
+      );
 
       const righeRaffaele = righeOrdine.filter(
         (r) => prodottiMap[r.prodotto_id]?.stampa === "RAFFAELE"
@@ -107,6 +110,7 @@ function StampaRaffaeleContent() {
             nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
             quantita: r.quantita,
             unita: r.unita,
+            note: r.note || "",
           });
         });
 
@@ -117,7 +121,9 @@ function StampaRaffaeleContent() {
     });
 
     const risultatoOrdinato = Object.fromEntries(
-      Object.entries(risultato).sort((a, b) => a[0].localeCompare(b[0], "it"))
+      Object.entries(risultato).sort((a, b) =>
+        a[0].localeCompare(b[0], "it")
+      )
     );
 
     setDati(risultatoOrdinato);
@@ -168,11 +174,9 @@ function StampaRaffaeleContent() {
             gap: 8,
           }}
         >
-          <div>
-            <h1 style={{ margin: 0, fontSize: 20 }}>
-              Stampa Raffaele - Ordini in bozza
-            </h1>
-          </div>
+          <h1 style={{ margin: 0, fontSize: 20 }}>
+            Stampa Raffaele - Ordini in bozza
+          </h1>
 
           <button
             onClick={stampaPagina}
@@ -213,7 +217,6 @@ function StampaRaffaeleContent() {
                   backgroundColor: "#ffffff",
                   breakInside: "avoid",
                   pageBreakInside: "avoid",
-                  minHeight: 0,
                 }}
               >
                 <div
@@ -223,43 +226,32 @@ function StampaRaffaeleContent() {
                     textTransform: "uppercase",
                     borderBottom: "1px solid #000000",
                     paddingBottom: 4,
-                    marginBottom: 4,
-                    wordBreak: "break-word",
-                    lineHeight: 1.1,
+                    marginBottom: 6,
                   }}
                 >
                   {cliente}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}
-                >
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {prodotti.map((p, i) => (
                     <div
                       key={`${cliente}-${i}`}
                       style={{
-                        paddingBottom: 6,
-                        marginBottom: 8,
                         borderBottom:
                           i !== prodotti.length - 1
                             ? "1px dotted #cfcfcf"
                             : "none",
+                        paddingBottom: 4,
                       }}
                     >
                       <div
                         style={{
                           fontWeight: 700,
                           wordBreak: "break-word",
-                          lineHeight: 1.05,
                         }}
                       >
                         {p.quantita} {p.unita} {p.nome}
+                        {p.note ? ` — Nota: ${p.note}` : ""}
                       </div>
                     </div>
                   ))}

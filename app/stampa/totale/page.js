@@ -114,6 +114,7 @@ function StampaTotaleContent() {
             nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
             quantita: r.quantita,
             unita: r.unita,
+            note: r.note || "",
           });
         });
       }
@@ -232,6 +233,7 @@ function StampaTotaleContent() {
                         fontWeight: "bold",
                         fontSize: 12,
                         textTransform: "uppercase",
+                        wordBreak: "break-word",
                       }}
                     >
                       {blocco.cliente}
@@ -245,16 +247,33 @@ function StampaTotaleContent() {
                       }}
                     >
                       {blocco.prodotti.map((p, i) => (
-                        <div key={`${blocco.cliente}-${i}`}>
+                        <div
+                          key={`${blocco.cliente}-${i}`}
+                          style={{
+                            marginBottom: 4,
+                            paddingBottom: 4,
+                            borderBottom:
+                              i !== blocco.prodotti.length - 1
+                                ? "1px dotted #cfcfcf"
+                                : "none",
+                            wordBreak: "break-word",
+                          }}
+                        >
                           <strong>
                             {p.quantita} {p.unita}
                           </strong>{" "}
                           {p.nome}
+                          {p.note ? ` — Nota: ${p.note}` : ""}
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
+
+                {gruppo.length < 3 &&
+                  Array.from({ length: 3 - gruppo.length }).map((_, i) => (
+                    <div key={`vuoto-${indexGruppo}-${i}`} />
+                  ))}
               </div>
             ))}
           </div>
