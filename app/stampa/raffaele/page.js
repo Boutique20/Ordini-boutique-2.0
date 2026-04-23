@@ -175,7 +175,7 @@ function StampaRaffaeleContent() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: 20 }}>
-            Stampa Raffaele - Ordini in bozza
+            Preparazione pesce - Ordini in bozza
           </h1>
 
           <button
@@ -197,7 +197,7 @@ function StampaRaffaeleContent() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine in bozza per Raffaele.</p>
+          <p>Nessun ordine in bozza per preparazione pesce.</p>
         ) : (
           <div
             style={{
