@@ -167,7 +167,7 @@ function StampaAndreaContent() {
         >
           <div>
             <h1 style={{ margin: 0, fontSize: 22 }}>
-              Stampa Andrea - Ordini in bozza
+              Preparazione congelato - Ordini in bozza
             </h1>
           </div>
 
@@ -190,7 +190,7 @@ function StampaAndreaContent() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine in bozza per Andrea.</p>
+          <p>Nessun ordine in bozza per preparazione congelato.</p>
         ) : (
           <div
             style={{
