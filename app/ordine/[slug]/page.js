@@ -288,12 +288,13 @@ export default function OrdineClientePage() {
     }
 
     const { data: prodottiData, error: prodottiError } = await supabase
-      .from("prodotti_v2")
-      .select("*")
-      .order("categoria", { ascending: true })
-      .order("ordine_visualizzazione", { ascending: true, nullsFirst: false })
-      .order("nome", { ascending: true });
-
+  .from("prodotti_v2")
+  .select("*")
+  .neq("categoria", "ARCHIVIO")
+  .order("categoria", { ascending: true })
+  .order("ordine_visualizzazione", { ascending: true, nullsFirst: false })
+  .order("nome", { ascending: true });
+  
     if (prodottiError) {
       console.error("Errore prodotti:", prodottiError);
       alert(JSON.stringify(prodottiError, null, 2));
