@@ -10,7 +10,7 @@ const CATEGORY_LABELS = {
   FDM: "FRUTTI DI MARE",
   "FDM/L": "FRUTTI DI MARE LAVORATI",
   C: "CONGELATO",
-  OST: "OSTRICHE",
+  OST: " SELEZIONE OSTRICHE",
 };
 
 const CATEGORY_ORDER = ["C", "FDM", "FDM/L", "P", "P/L", "OST"];
@@ -137,9 +137,7 @@ const UNITA_FALLBACK = {
   "MUSSOLI": ["KG"],
   "NOCE BIANCA": ["KG"],
   "NOCE ROSSA": ["KG"],
-  "OSTRICA CONCAVA": ["KG", "PZ"],
-  "OSTRICA PERLE BY BOUTIQUE": ["KG", "CEST"],
-  "VONGOLA VERACE": ["KG"],
+ "VONGOLA VERACE": ["KG"],
 
   "CALAMARETTO": ["KG", "PZ"],
   "ALLIEVI": ["KG", "PZ"],
