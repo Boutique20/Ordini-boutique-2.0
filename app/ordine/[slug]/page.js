@@ -294,7 +294,7 @@ export default function OrdineClientePage() {
   .order("categoria", { ascending: true })
   .order("ordine_visualizzazione", { ascending: true, nullsFirst: false })
   .order("nome", { ascending: true });
-  
+
     if (prodottiError) {
       console.error("Errore prodotti:", prodottiError);
       alert(JSON.stringify(prodottiError, null, 2));
@@ -435,10 +435,13 @@ export default function OrdineClientePage() {
     const gruppi = {};
 
     for (const prodotto of prodottiFiltrati) {
-      const codice = prodotto.categoria || "ALTRO";
-      if (!gruppi[codice]) gruppi[codice] = [];
-      gruppi[codice].push(prodotto);
-    }
+  const codice = prodotto.categoria || "ALTRO";
+
+  if (codice === "ARCHIVIO") continue;
+
+  if (!gruppi[codice]) gruppi[codice] = [];
+  gruppi[codice].push(prodotto);
+}
 
     const gruppiOrdinati = {};
     for (const categoria of CATEGORY_ORDER) {
