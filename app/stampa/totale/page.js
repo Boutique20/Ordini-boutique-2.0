@@ -70,9 +70,9 @@ function StampaTotaleContent() {
     let prodotti = [];
     if (idsProdotti.length > 0) {
       const response = await supabase
-        .from("prodotti_v2")
-        .select("id, nome")
-        .in("id", idsProdotti);
+  .from("prodotti_v2")
+  .select("id, nome, ordine_visualizzazione")
+  .in("id", idsProdotti);
 
       if (response.error) {
         console.error("Errore prodotti:", response.error);
@@ -111,12 +111,17 @@ function StampaTotaleContent() {
 
         righeOrdine.forEach((r) => {
           risultato[clienteNome].push({
-            nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
-            quantita: r.quantita,
-            unita: r.unita,
-            note: r.note || "",
-          });
+  nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
+  ordine_visualizzazione:
+    prodottiMap[r.prodotto_id]?.ordine_visualizzazione ?? 9999,
+  quantita: r.quantita,
+  unita: r.unita,
+  note: r.note || "",
+});
         });
+        risultato[clienteNome].sort(
+  (a, b) => a.ordine_visualizzazione - b.ordine_visualizzazione
+);
       }
     });
 
