@@ -121,10 +121,11 @@ export default function GestioneOrdiniPage() {
   async function caricaOrdini() {
     setCaricamento(true);
 
-    const { data: ordiniData, error: ordiniError } = await supabase
-      .from("ordini")
-      .select("*")
-      .order("id", { ascending: false });
+   const { data: ordiniData, error: ordiniError } = await supabase
+  .from("ordini")
+  .select("*")
+  .neq("stato", "consegnato")
+  .order("id", { ascending: false });
 
     if (ordiniError) {
       console.error("Errore caricamento ordini:", ordiniError);
@@ -212,20 +213,23 @@ export default function GestioneOrdiniPage() {
   }
 
   async function aggiornaStato(ordineId, nuovoStato) {
-    const { error } = await supabase
-      .from("ordini")
-      .update({ stato: nuovoStato })
-      .eq("id", ordineId);
+  const { error } = await supabase
+    .from("ordini")
+    .update({ stato: nuovoStato })
+    .eq("id", ordineId);
 
-    if (error) {
-      console.error("Errore aggiornamento stato:", error);
-      alert(JSON.stringify(error, null, 2));
-      return;
-    }
-
-    caricaOrdini();
+  if (error) {
+    console.error("Errore aggiornamento stato:", error);
+    alert(JSON.stringify(error, null, 2));
+    return;
   }
 
+  setOrdini((prev) =>
+    prev.map((ordine) =>
+      ordine.id === ordineId ? { ...ordine, stato: nuovoStato } : ordine
+    )
+  );
+}
   async function eliminaOrdine(ordineId) {
     const conferma = confirm(
       `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si può annullare.`
