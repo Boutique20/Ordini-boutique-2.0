@@ -529,7 +529,20 @@ export default function OrdineClientePage() {
       setInvioInCorso(false);
       return;
     }
-
+try {
+  await fetch("/api/telegram", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cliente: cliente.nome,
+      data_operativa: dataOperativa,
+    }),
+  });
+} catch (error) {
+  console.error("Errore notifica Telegram:", error);
+}
     alert(
       "Ordine ricevuto ✅ Stiamo verificando la disponibilità e procediamo con la preparazione."
     );
