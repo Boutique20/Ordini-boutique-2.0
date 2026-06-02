@@ -517,16 +517,19 @@ export default function GestioneOrdiniPage() {
           <h1 style={{ margin: 0, fontSize: 32 }}>Gestione Ordini</h1>
 
           <div
-            style={{
-              display: "flex",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
-          >
-            <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
-              Stampa Andrea
-            </a>
+  style={{
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+  }}
+>
+  <a href="/ordine-manuale" style={bottoneLink("#8b5cf6")}>
+    + Ordine manuale
+  </a>
 
+  <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
+    Stampa Andrea
+  </a>
             <a href="/stampa/raffaele" style={bottoneLink("#f97316")}>
               Stampa Raffaele
             </a>
