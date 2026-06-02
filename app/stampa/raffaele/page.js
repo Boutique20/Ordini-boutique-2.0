@@ -90,7 +90,9 @@ function StampaRaffaeleContent() {
 
     (ordini || []).forEach((ordine) => {
       const clienteNome =
-        clientiMap[ordine.cliente_id] || "Cliente sconosciuto";
+  ordine.cliente_nome_manuale ||
+  clientiMap[ordine.cliente_id] ||
+  "Cliente sconosciuto";
 
       const righeOrdine = (righe || []).filter(
         (r) => r.ordine_id === ordine.id

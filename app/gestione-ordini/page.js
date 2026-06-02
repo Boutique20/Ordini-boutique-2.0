@@ -202,12 +202,14 @@ export default function GestioneOrdiniPage() {
       });
     }
 
-    const ordiniFinali = (ordiniData || []).map((ordine) => ({
-      ...ordine,
-      cliente_nome: clientiMap[ordine.cliente_id] || "Cliente sconosciuto",
-      righe: righePerOrdine[ordine.id] || [],
-    }));
-
+   const ordiniFinali = (ordiniData || []).map((ordine) => ({
+  ...ordine,
+  cliente_nome:
+    ordine.cliente_nome_manuale ||
+    clientiMap[ordine.cliente_id] ||
+    "Cliente sconosciuto",
+  righe: righePerOrdine[ordine.id] || [],
+}));
     setOrdini(ordiniFinali);
     setCaricamento(false);
   }
