@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
@@ -283,7 +283,7 @@ function StampaTotaleContent() {
         .cella-ordine {
           padding: 2.5mm;
           overflow: hidden;
-          font-size: 8.5px;
+          font-size: 9.2px;
           line-height: 1.15;
         }
 
@@ -309,12 +309,10 @@ function StampaTotaleContent() {
         }
 
         .riga-prodotto {
-          display: grid;
-          grid-template-columns: 15mm 1fr;
-          gap: 2mm;
-          border-bottom: 1px dotted #b5b5b5;
-          padding: 0.8mm 0;
-          min-height: 4mm;
+          display: flex; align-items: flex-start; gap: 0.8mm;
+          border-bottom: none !important;
+          padding: 0.25mm 0;
+          min-height: 3mm;
         }
 
         .quantita {
@@ -375,7 +373,7 @@ function StampaTotaleContent() {
           return (
             <div className="pagina-stampa" key={`pagina-${indexPagina}`}>
               <div className="intestazione-stampa">
-                <div>STAMPA TOTALE — ORDINI IN BOZZA</div>
+                <div>STAMPA TOTALE â€” ORDINI IN BOZZA</div>
                 <div>Generata: {formatDataOra(new Date().toISOString())}</div>
                 <div>
                   Pagina {indexPagina + 1} di {pagine.length}
