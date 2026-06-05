@@ -3,12 +3,31 @@
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
+const COLONNE_PER_PAGINA = 8;
+const RIGHE_PER_PAGINA = 7;
+const CELLE_PER_PAGINA = COLONNE_PER_PAGINA * RIGHE_PER_PAGINA;
+const RIGHE_PRODOTTO_PER_CELLA = 4;
+
 function chunkArray(array, size) {
   const risultato = [];
   for (let i = 0; i < array.length; i += size) {
     risultato.push(array.slice(i, i + size));
   }
   return risultato;
+}
+
+function formatDataOra(dataString) {
+  if (!dataString) return "-";
+
+  const data = new Date(dataString);
+
+  return data.toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function StampaTotaleContent() {
@@ -70,9 +89,9 @@ function StampaTotaleContent() {
     let prodotti = [];
     if (idsProdotti.length > 0) {
       const response = await supabase
-  .from("prodotti_v2")
-  .select("id, nome, ordine_visualizzazione")
-  .in("id", idsProdotti);
+        .from("prodotti_v2")
+        .select("id, nome, ordine_visualizzazione")
+        .in("id", idsProdotti);
 
       if (response.error) {
         console.error("Errore prodotti:", response.error);
@@ -98,9 +117,9 @@ function StampaTotaleContent() {
 
     (ordini || []).forEach((ordine) => {
       const clienteNome =
-  ordine.cliente_nome_manuale ||
-  clientiMap[ordine.cliente_id] ||
-  "Cliente sconosciuto";
+        ordine.cliente_nome_manuale ||
+        clientiMap[ordine.cliente_id] ||
+        "Cliente sconosciuto";
 
       const righeOrdine = (righe || []).filter(
         (r) => r.ordine_id === ordine.id
@@ -113,17 +132,20 @@ function StampaTotaleContent() {
 
         righeOrdine.forEach((r) => {
           risultato[clienteNome].push({
-  nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
-  ordine_visualizzazione:
-    prodottiMap[r.prodotto_id]?.ordine_visualizzazione ?? 9999,
-  quantita: r.quantita,
-  unita: r.unita,
-  note: r.note || "",
-});
+            nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
+            ordine_visualizzazione:
+              prodottiMap[r.prodotto_id]?.ordine_visualizzazione ?? 9999,
+            quantita: r.quantita,
+            unita: r.unita,
+            note: r.note || "",
+          });
         });
+
         risultato[clienteNome].sort(
-  (a, b) => a.ordine_visualizzazione - b.ordine_visualizzazione
-);
+          (a, b) =>
+            a.ordine_visualizzazione - b.ordine_visualizzazione ||
+            a.nome.localeCompare(b.nome, "it")
+        );
       }
     });
 
@@ -146,7 +168,35 @@ function StampaTotaleContent() {
     prodotti,
   }));
 
-  const gruppi = chunkArray(clientiArray, 3);
+  const celle = [];
+
+  clientiArray.forEach((blocco) => {
+    const partiProdotti = chunkArray(
+      blocco.prodotti,
+      RIGHE_PRODOTTO_PER_CELLA
+    );
+
+    if (partiProdotti.length === 0) {
+      celle.push({
+        cliente: blocco.cliente,
+        prodotti: [],
+        parte: 1,
+        totaleParti: 1,
+      });
+      return;
+    }
+
+    partiProdotti.forEach((prodotti, index) => {
+      celle.push({
+        cliente: blocco.cliente,
+        prodotti,
+        parte: index + 1,
+        totaleParti: partiProdotti.length,
+      });
+    });
+  });
+
+  const pagine = chunkArray(celle, CELLE_PER_PAGINA);
 
   return (
     <div
@@ -160,24 +210,129 @@ function StampaTotaleContent() {
     >
       <style>{`
         @page {
-          size: A4 portrait;
-          margin: 8mm;
+          size: A4 landscape;
+          margin: 5mm;
         }
 
         @media print {
-          button {
+          button,
+          .no-print {
             display: none !important;
           }
 
+          html,
           body {
-            margin: 0;
-            padding: 0;
-            background: #ffffff;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
           }
+
+          .pagina-stampa {
+            page-break-after: always;
+            break-after: page;
+          }
+
+          .pagina-stampa:last-child {
+            page-break-after: auto;
+            break-after: auto;
+          }
+        }
+
+        .pagina-stampa {
+          width: 287mm;
+          height: 200mm;
+          margin: 0 auto 12px auto;
+          background: #ffffff;
+          box-sizing: border-box;
+          border: 1px solid #000000;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .intestazione-stampa {
+          height: 11mm;
+          border-bottom: 1px solid #000000;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 5mm;
+          box-sizing: border-box;
+          font-size: 10px;
+          font-weight: bold;
+        }
+
+        .griglia-stampa {
+          flex: 1;
+          display: grid;
+          grid-template-columns: repeat(${COLONNE_PER_PAGINA}, 1fr);
+          grid-template-rows: repeat(${RIGHE_PER_PAGINA}, 1fr);
+        }
+
+        .cella-ordine,
+        .cella-vuota {
+          border-right: 1px solid #000000;
+          border-bottom: 1px solid #000000;
+          box-sizing: border-box;
+        }
+
+        .cella-ordine:nth-child(${COLONNE_PER_PAGINA}n),
+        .cella-vuota:nth-child(${COLONNE_PER_PAGINA}n) {
+          border-right: none;
+        }
+
+        .cella-ordine {
+          padding: 2.5mm;
+          overflow: hidden;
+          font-size: 8.5px;
+          line-height: 1.15;
+        }
+
+        .cliente {
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          border-bottom: 1px solid #000000;
+          padding-bottom: 1.5mm;
+          margin-bottom: 1.5mm;
+          min-height: 8mm;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          word-break: break-word;
+        }
+
+        .continua {
+          font-size: 8px;
+          font-weight: normal;
+          margin-top: 1mm;
+          text-transform: none;
+        }
+
+        .riga-prodotto {
+          display: grid;
+          grid-template-columns: 15mm 1fr;
+          gap: 2mm;
+          border-bottom: 1px dotted #b5b5b5;
+          padding: 0.8mm 0;
+          min-height: 4mm;
+        }
+
+        .quantita {
+          font-weight: bold;
+          white-space: nowrap;
+        }
+
+        .prodotto {
+          word-break: break-word;
+        }
+
+        .nota-riga {
+          font-style: italic;
+          font-size: 7.5px;
         }
       `}</style>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div className="no-print" style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
@@ -189,7 +344,7 @@ function StampaTotaleContent() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: 20 }}>
-            Stampa Totale - Ordini in bozza
+            Stampa Totale - Griglia Orizzontale
           </h1>
 
           <button
@@ -207,85 +362,70 @@ function StampaTotaleContent() {
             Stampa
           </button>
         </div>
+      </div>
 
-        {caricamento ? (
-          <p>Caricamento dati...</p>
-        ) : clientiArray.length === 0 ? (
-          <p>Nessun ordine in bozza.</p>
-        ) : (
-          <div>
-            {gruppi.map((gruppo, indexGruppo) => (
-              <div
-                key={indexGruppo}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 8,
-                  marginBottom: 8,
-                  alignItems: "start",
-                }}
-              >
-                {gruppo.map((blocco) => (
+      {caricamento ? (
+        <p>Caricamento dati...</p>
+      ) : celle.length === 0 ? (
+        <p>Nessun ordine in bozza.</p>
+      ) : (
+        pagine.map((pagina, indexPagina) => {
+          const celleVuote = CELLE_PER_PAGINA - pagina.length;
+
+          return (
+            <div className="pagina-stampa" key={`pagina-${indexPagina}`}>
+              <div className="intestazione-stampa">
+                <div>STAMPA TOTALE — ORDINI IN BOZZA</div>
+                <div>Generata: {formatDataOra(new Date().toISOString())}</div>
+                <div>
+                  Pagina {indexPagina + 1} di {pagine.length}
+                </div>
+              </div>
+
+              <div className="griglia-stampa">
+                {pagina.map((cella, indexCella) => (
                   <div
-                    key={blocco.cliente}
-                    style={{
-                      border: "1px solid #000000",
-                      minHeight: 120,
-                    }}
+                    className="cella-ordine"
+                    key={`${cella.cliente}-${cella.parte}-${indexCella}`}
                   >
-                    <div
-                      style={{
-                        borderBottom: "1px solid #000000",
-                        padding: "8px 10px",
-                        fontWeight: "bold",
-                        fontSize: 12,
-                        textTransform: "uppercase",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {blocco.cliente}
+                    <div className="cliente">
+                      <div>{cella.cliente}</div>
+
+                      {cella.totaleParti > 1 ? (
+                        <div className="continua">
+                          continuazione {cella.parte}
+                        </div>
+                      ) : null}
                     </div>
 
-                    <div
-                      style={{
-                        padding: "8px 10px",
-                        fontSize: 11,
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {blocco.prodotti.map((p, i) => (
-                        <div
-                          key={`${blocco.cliente}-${i}`}
-                          style={{
-                            marginBottom: 4,
-                            paddingBottom: 4,
-                            borderBottom:
-                              i !== blocco.prodotti.length - 1
-                                ? "1px dotted #cfcfcf"
-                                : "none",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          <strong>
-                            {p.quantita} {p.unita}
-                          </strong>{" "}
-                          {p.nome}
-                          {p.note ? ` — Nota: ${p.note}` : ""}
+                    {cella.prodotti.map((p, i) => (
+                      <div
+                        className="riga-prodotto"
+                        key={`${cella.cliente}-${cella.parte}-${i}`}
+                      >
+                        <div className="quantita">
+                          {p.quantita} {p.unita}
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="prodotto">
+                          {p.nome}
+                          {p.note ? (
+                            <div className="nota-riga">Nota: {p.note}</div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ))}
 
-                {gruppo.length < 3 &&
-                  Array.from({ length: 3 - gruppo.length }).map((_, i) => (
-                    <div key={`vuoto-${indexGruppo}-${i}`} />
-                  ))}
+                {Array.from({ length: celleVuote }).map((_, i) => (
+                  <div className="cella-vuota" key={`vuota-${i}`} />
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
