@@ -211,7 +211,7 @@ function StampaTotaleContent() {
       <style>{`
         @page {
           size: A4 landscape;
-          margin: 0;
+          margin: 5mm;
         }
 
         @media print {
@@ -228,8 +228,8 @@ function StampaTotaleContent() {
           }
 
           .pagina-stampa {
-          width: 295mm;
-          height: 207mm;
+          width: 287mm;
+          height: 200mm;
           margin: 0 auto 0 auto;
           background: #ffffff;
           box-sizing: border-box;
@@ -311,10 +311,7 @@ function StampaTotaleContent() {
         }
 
         .continua {
-          font-size: 8px;
-          font-weight: normal;
-          margin-top: 1mm;
-          text-transform: none;
+          display: none !important;
         }
 
         .riga-prodotto {
@@ -444,4 +441,6 @@ export default function StampaTotalePage() {
     </Suspense>
   );
 }
+
+
 
