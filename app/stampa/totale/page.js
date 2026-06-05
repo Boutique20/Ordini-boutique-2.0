@@ -211,7 +211,7 @@ function StampaTotaleContent() {
       <style>{`
         @page {
           size: A4 landscape;
-          margin: 5mm;
+          margin: 0;
         }
 
         @media print {
@@ -228,9 +228,18 @@ function StampaTotaleContent() {
           }
 
           .pagina-stampa {
-            page-break-after: always;
-            break-after: page;
-          }
+          width: 295mm;
+          height: 207mm;
+          margin: 0 auto 0 auto;
+          background: #ffffff;
+          box-sizing: border-box;
+          border: 1px solid #000000;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
 
           .pagina-stampa:last-child {
             page-break-after: auto;
@@ -241,7 +250,7 @@ function StampaTotaleContent() {
         .pagina-stampa {
           width: 287mm;
           height: 200mm;
-          margin: 0 auto 12px auto;
+          margin: 0 auto 0 auto;
           background: #ffffff;
           box-sizing: border-box;
           border: 1px solid #000000;
@@ -435,3 +444,4 @@ export default function StampaTotalePage() {
     </Suspense>
   );
 }
+
