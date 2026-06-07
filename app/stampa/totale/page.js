@@ -4,9 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
 const COLONNE_PER_PAGINA = 8;
-const RIGHE_PER_PAGINA = 4;
+const RIGHE_PER_PAGINA = 3;
 const CELLE_PER_PAGINA = COLONNE_PER_PAGINA * RIGHE_PER_PAGINA;
-const RIGHE_PRODOTTO_PER_CELLA = 8;
+const RIGHE_PRODOTTO_PER_CELLA = 10;
 
 function chunkArray(array, size) {
   const risultato = [];
@@ -441,6 +441,7 @@ export default function StampaTotalePage() {
     </Suspense>
   );
 }
+
 
 
 
