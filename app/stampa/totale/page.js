@@ -259,15 +259,11 @@ function StampaTotaleContent() {
         }
 
         .intestazione-stampa {
-          height: 11mm;
-          border-bottom: 1px solid #000000;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 5mm;
-          box-sizing: border-box;
-          font-size: 10px;
-          font-weight: bold;
+          display: none !important;
+          height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
         }
 
         .griglia-stampa {
@@ -441,6 +437,10 @@ export default function StampaTotalePage() {
     </Suspense>
   );
 }
+
+
+
+
 
 
 
