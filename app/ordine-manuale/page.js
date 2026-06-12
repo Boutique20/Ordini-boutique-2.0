@@ -229,6 +229,7 @@ export default function OrdineManualePage() {
   const [unitaProdotti, setUnitaProdotti] = useState({});
   const [unitaSelezionate, setUnitaSelezionate] = useState({});
   const [noteProdotti, setNoteProdotti] = useState({});
+  const [righeAggiuntive, setRigheAggiuntive] = useState({});
 
   useEffect(() => {
     caricaDati();
@@ -312,6 +313,46 @@ export default function OrdineManualePage() {
     }));
   }
 
+  function aggiungiAltraQuantita(prodotto) {
+    const nomeNorm = normalizeName(prodotto.nome);
+    const opzioniUnita =
+      unitaProdotti[prodotto.id] ||
+      UNITA_FALLBACK[nomeNorm] ||
+      [prodotto.unita_vendita || "KG"];
+
+    const nuovaRiga = {
+      rigaId: `${prodotto.id}-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`,
+      quantita: "",
+      unita: unitaSelezionate[prodotto.id] || opzioniUnita[0] || "KG",
+      note: "",
+    };
+
+    setRigheAggiuntive((prev) => ({
+      ...prev,
+      [prodotto.id]: [...(prev[prodotto.id] || []), nuovaRiga],
+    }));
+  }
+
+  function aggiornaRigaAggiuntiva(prodottoId, rigaId, campo, valore) {
+    setRigheAggiuntive((prev) => ({
+      ...prev,
+      [prodottoId]: (prev[prodottoId] || []).map((riga) =>
+        riga.rigaId === rigaId ? { ...riga, [campo]: valore } : riga
+      ),
+    }));
+  }
+
+  function rimuoviRigaAggiuntiva(prodottoId, rigaId) {
+    setRigheAggiuntive((prev) => ({
+      ...prev,
+      [prodottoId]: (prev[prodottoId] || []).filter(
+        (riga) => riga.rigaId !== rigaId
+      ),
+    }));
+  }
+
   const prodottiFiltrati = useMemo(() => {
     const testo = ricerca.trim().toLowerCase();
 
@@ -352,19 +393,50 @@ export default function OrdineManualePage() {
   }, [prodottiFiltrati]);
 
   const riepilogoOrdine = useMemo(() => {
-    return prodotti
-      .filter((p) => {
-        const valore = quantita[p.id];
-        return valore !== undefined && valore !== "" && Number(valore) > 0;
-      })
-      .map((p) => ({
-        id: p.id,
-        nome: p.nome,
-        quantita: Number(quantita[p.id]),
-        unita: unitaSelezionate[p.id] || "KG",
-        note: noteProdotti[p.id] || "",
-      }));
-  }, [prodotti, quantita, unitaSelezionate, noteProdotti]);
+    const righe = [];
+
+    prodotti.forEach((p) => {
+      const valore = quantita[p.id];
+
+      if (valore !== undefined && valore !== "" && Number(valore) > 0) {
+        righe.push({
+          rigaId: `principale-${p.id}`,
+          id: p.id,
+          nome: p.nome,
+          quantita: Number(valore),
+          unita: unitaSelezionate[p.id] || "KG",
+          note: noteProdotti[p.id] || "",
+        });
+      }
+
+      const righeExtra = righeAggiuntive[p.id] || [];
+
+      righeExtra.forEach((riga) => {
+        if (
+          riga.quantita !== undefined &&
+          riga.quantita !== "" &&
+          Number(riga.quantita) > 0
+        ) {
+          righe.push({
+            rigaId: riga.rigaId,
+            id: p.id,
+            nome: p.nome,
+            quantita: Number(riga.quantita),
+            unita: riga.unita || unitaSelezionate[p.id] || "KG",
+            note: riga.note || "",
+          });
+        }
+      });
+    });
+
+    return righe;
+  }, [
+    prodotti,
+    quantita,
+    unitaSelezionate,
+    noteProdotti,
+    righeAggiuntive,
+  ]);
 
   async function inviaOrdine() {
     const nomeManuale = clienteNomeManuale.trim();
@@ -446,6 +518,7 @@ export default function OrdineManualePage() {
     setQuantita({});
     setNote("");
     setNoteProdotti({});
+    setRigheAggiuntive({});
 
     const resetUnita = {};
     for (const prodotto of prodotti) {
@@ -772,6 +845,178 @@ export default function OrdineManualePage() {
                             }}
                           />
                         </div>
+
+                        {(righeAggiuntive[p.id] || []).map((rigaExtra, index) => (
+                          <div
+                            key={rigaExtra.rigaId}
+                            style={{
+                              marginTop: 10,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              gap: 14,
+                              flexWrap: "wrap",
+                              paddingTop: 10,
+                              borderTop: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  color: "#bae6fd",
+                                  fontSize: 13,
+                                  fontWeight: "bold",
+                                  minWidth: 105,
+                                }}
+                              >
+                                Altra quantità {index + 2}
+                              </div>
+
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                value={rigaExtra.quantita}
+                                onChange={(e) =>
+                                  aggiornaRigaAggiuntiva(
+                                    p.id,
+                                    rigaExtra.rigaId,
+                                    "quantita",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Qtà"
+                                style={{
+                                  width: 95,
+                                  padding: "12px 10px",
+                                  borderRadius: 10,
+                                  border: "2px solid #475569",
+                                  backgroundColor: "#0f172a",
+                                  color: "#ffffff",
+                                  fontSize: 16,
+                                  textAlign: "center",
+                                  outline: "none",
+                                }}
+                              />
+
+                              {opzioniUnita.length === 1 ? (
+                                <div
+                                  style={{
+                                    minWidth: 72,
+                                    padding: "12px 10px",
+                                    borderRadius: 10,
+                                    border: "2px solid #334155",
+                                    backgroundColor: "#1e293b",
+                                    color: "#e2e8f0",
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    fontSize: 15,
+                                  }}
+                                >
+                                  {opzioniUnita[0]}
+                                </div>
+                              ) : (
+                                <select
+                                  value={rigaExtra.unita || opzioniUnita[0]}
+                                  onChange={(e) =>
+                                    aggiornaRigaAggiuntiva(
+                                      p.id,
+                                      rigaExtra.rigaId,
+                                      "unita",
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    minWidth: 100,
+                                    padding: "12px 10px",
+                                    borderRadius: 10,
+                                    border: "2px solid #475569",
+                                    backgroundColor: "#0f172a",
+                                    color: "#ffffff",
+                                    fontSize: 15,
+                                    fontWeight: "bold",
+                                    outline: "none",
+                                  }}
+                                >
+                                  {opzioniUnita.map((u) => (
+                                    <option key={u} value={u}>
+                                      {u}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+
+                            <input
+                              type="text"
+                              value={rigaExtra.note}
+                              onChange={(e) =>
+                                aggiornaRigaAggiuntiva(
+                                  p.id,
+                                  rigaExtra.rigaId,
+                                  "note",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nota per questa quantità"
+                              style={{
+                                flex: 1,
+                                minWidth: 220,
+                                padding: "12px 12px",
+                                borderRadius: 10,
+                                border: "2px solid #475569",
+                                backgroundColor: "#0f172a",
+                                color: "#ffffff",
+                                fontSize: 15,
+                                outline: "none",
+                              }}
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                rimuoviRigaAggiuntiva(p.id, rigaExtra.rigaId)
+                              }
+                              style={{
+                                padding: "10px 12px",
+                                borderRadius: 10,
+                                border: "none",
+                                backgroundColor: "#ef4444",
+                                color: "#ffffff",
+                                fontWeight: "bold",
+                                cursor: "pointer",
+                                fontSize: 13,
+                              }}
+                            >
+                              X
+                            </button>
+                          </div>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => aggiungiAltraQuantita(p)}
+                          style={{
+                            marginTop: 10,
+                            padding: "10px 12px",
+                            borderRadius: 10,
+                            border: "1px solid rgba(125, 211, 252, 0.45)",
+                            backgroundColor: "rgba(14, 165, 233, 0.12)",
+                            color: "#7dd3fc",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                            fontSize: 14,
+                          }}
+                        >
+                          + Aggiungi altra quantità
+                        </button>
                       </div>
                     );
                   })}
@@ -835,7 +1080,7 @@ export default function OrdineManualePage() {
                 }}
               >
                 {riepilogoOrdine.map((riga) => (
-                  <div key={riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
+                  <div key={riga.rigaId || riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
                     - {riga.nome} → {riga.quantita} {riga.unita}
                     {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
