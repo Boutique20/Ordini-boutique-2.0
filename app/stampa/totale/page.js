@@ -13,7 +13,6 @@ import {
 
 import {
   SortableContext,
-  arrayMove,
   rectSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -61,14 +60,13 @@ function CellaOrdineSortable({ cella }) {
     id: cella.id,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    const style = {
+    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
+    transition: isDragging ? transition : "none",
     opacity: isDragging ? 0.55 : 1,
     zIndex: isDragging ? 999 : "auto",
     position: "relative",
   };
-
   const righeVisuali = [...cella.prodotti];
 
   while (righeVisuali.length < RIGHE_PRODOTTO_PER_CELLA) {
@@ -124,12 +122,11 @@ function CellaVuotaSortable({ cella }) {
     id: cella.id,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    const style = {
+    transform: undefined,
+    transition: "none",
     backgroundColor: isOver ? "#f3f4f6" : "#ffffff",
   };
-
   return (
     <div
       ref={setNodeRef}
@@ -359,28 +356,35 @@ function StampaTotaleContent() {
 
   const pagine = chunkArray(celleOrdinate, CELLE_PER_PAGINA);
 
-  function gestisciFineDrag(event) {
-    const { active, over } = event;
+function gestisciFineDrag(event) {
+  const { active, over } = event;
 
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    setOrdineCelle((ordinePrecedente) => {
-      const ordineAttuale =
-        ordinePrecedente.length > 0 ? ordinePrecedente : idsBase;
-
-      const indiceVecchio = ordineAttuale.indexOf(active.id);
-      const indiceNuovo = ordineAttuale.indexOf(over.id);
-
-      if (indiceVecchio === -1 || indiceNuovo === -1) {
-        return ordinePrecedente;
-      }
-
-      return arrayMove(ordineAttuale, indiceVecchio, indiceNuovo);
-    });
+  if (!over || active.id === over.id) {
+    return;
   }
 
+  setOrdineCelle((ordinePrecedente) => {
+    const ordineAttuale =
+      ordinePrecedente.length > 0 ? [...ordinePrecedente] : [...idsBase];
+
+    const indiceVecchio = ordineAttuale.indexOf(active.id);
+    const indiceNuovo = ordineAttuale.indexOf(over.id);
+
+    if (indiceVecchio === -1 || indiceNuovo === -1) {
+      return ordinePrecedente;
+    }
+
+    const nuovoOrdine = [...ordineAttuale];
+
+    const cellaOrigine = nuovoOrdine[indiceVecchio];
+    const cellaDestinazione = nuovoOrdine[indiceNuovo];
+
+    nuovoOrdine[indiceNuovo] = cellaOrigine;
+    nuovoOrdine[indiceVecchio] = cellaDestinazione;
+
+    return nuovoOrdine;
+  });
+}
   return (
     <div
       style={{
