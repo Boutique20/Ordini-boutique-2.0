@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -121,11 +121,11 @@ export default function GestioneOrdiniPage() {
   async function caricaOrdini() {
     setCaricamento(true);
 
-   const { data: ordiniData, error: ordiniError } = await supabase
-  .from("ordini")
-  .select("*")
-  .neq("stato", "consegnato")
-  .order("id", { ascending: false });
+    const { data: ordiniData, error: ordiniError } = await supabase
+      .from("ordini")
+      .select("*")
+      .neq("stato", "consegnato")
+      .order("id", { ascending: false });
 
     if (ordiniError) {
       console.error("Errore caricamento ordini:", ordiniError);
@@ -202,39 +202,41 @@ export default function GestioneOrdiniPage() {
       });
     }
 
-   const ordiniFinali = (ordiniData || []).map((ordine) => ({
-  ...ordine,
-  cliente_nome:
-    ordine.cliente_nome_manuale ||
-    clientiMap[ordine.cliente_id] ||
-    "Cliente sconosciuto",
-  righe: righePerOrdine[ordine.id] || [],
-}));
+    const ordiniFinali = (ordiniData || []).map((ordine) => ({
+      ...ordine,
+      cliente_nome:
+        ordine.cliente_nome_manuale ||
+        clientiMap[ordine.cliente_id] ||
+        "Cliente sconosciuto",
+      righe: righePerOrdine[ordine.id] || [],
+    }));
+
     setOrdini(ordiniFinali);
     setCaricamento(false);
   }
 
   async function aggiornaStato(ordineId, nuovoStato) {
-  const { error } = await supabase
-    .from("ordini")
-    .update({ stato: nuovoStato })
-    .eq("id", ordineId);
+    const { error } = await supabase
+      .from("ordini")
+      .update({ stato: nuovoStato })
+      .eq("id", ordineId);
 
-  if (error) {
-    console.error("Errore aggiornamento stato:", error);
-    alert(JSON.stringify(error, null, 2));
-    return;
+    if (error) {
+      console.error("Errore aggiornamento stato:", error);
+      alert(JSON.stringify(error, null, 2));
+      return;
+    }
+
+    setOrdini((prev) =>
+      prev.map((ordine) =>
+        ordine.id === ordineId ? { ...ordine, stato: nuovoStato } : ordine
+      )
+    );
   }
 
-  setOrdini((prev) =>
-    prev.map((ordine) =>
-      ordine.id === ordineId ? { ...ordine, stato: nuovoStato } : ordine
-    )
-  );
-}
   async function eliminaOrdine(ordineId) {
     const conferma = confirm(
-      `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si può annullare.`
+      `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si puÃ² annullare.`
     );
 
     if (!conferma) return;
@@ -344,20 +346,46 @@ export default function GestioneOrdiniPage() {
               Ordine #{ordine.id}
             </div>
 
-            <button
-              onClick={() => eliminaOrdine(ordine.id)}
+            <div
               style={{
-                padding: "8px 12px",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: "bold",
-                backgroundColor: "#dc2626",
-                color: "#ffffff",
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
               }}
             >
-              Elimina ordine
-            </button>
+              <a
+                href={`/modifica-ordine/${ordine.id}`}
+                style={{
+                  padding: "8px 12px",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  backgroundColor: "#0ea5e9",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+              >
+                Modifica ordine
+              </a>
+
+              <button
+                onClick={() => eliminaOrdine(ordine.id)}
+                style={{
+                  padding: "8px 12px",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  backgroundColor: "#dc2626",
+                  color: "#ffffff",
+                }}
+              >
+                Elimina ordine
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: 6 }}>
@@ -438,7 +466,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             ordine.righe.map((riga) => (
               <div key={riga.id} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} → {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -461,7 +489,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             filtraRighePerStampa(ordine.righe, "ANDREA").map((riga) => (
               <div key={`andrea-${riga.id}`} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} → {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -484,7 +512,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             filtraRighePerStampa(ordine.righe, "RAFFAELE").map((riga) => (
               <div key={`raffaele-${riga.id}`} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} → {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -517,19 +545,20 @@ export default function GestioneOrdiniPage() {
           <h1 style={{ margin: 0, fontSize: 32 }}>Gestione Ordini</h1>
 
           <div
-  style={{
-    display: "flex",
-    gap: 10,
-    flexWrap: "wrap",
-  }}
->
-  <a href="/ordine-manuale" style={bottoneLink("#8b5cf6")}>
-    + Ordine manuale
-  </a>
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <a href="/ordine-manuale" style={bottoneLink("#8b5cf6")}>
+              + Ordine manuale
+            </a>
 
-  <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
-    Stampa Andrea
-  </a>
+            <a href="/stampa/andrea" style={bottoneLink("#16a34a")}>
+              Stampa Andrea
+            </a>
+
             <a href="/stampa/raffaele" style={bottoneLink("#f97316")}>
               Stampa Raffaele
             </a>
@@ -572,7 +601,7 @@ export default function GestioneOrdiniPage() {
             <strong>BOZZA</strong> = ordine nuovo da stampare
           </div>
           <div>
-            <strong>LAVORAZIONE</strong> = ordine già preso in carico / già stampato
+            <strong>LAVORAZIONE</strong> = ordine giÃ  preso in carico / giÃ  stampato
           </div>
           <div>
             <strong>PRONTO</strong> = ordine preparato
