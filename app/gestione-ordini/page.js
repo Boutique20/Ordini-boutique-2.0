@@ -236,7 +236,7 @@ export default function GestioneOrdiniPage() {
 
   async function eliminaOrdine(ordineId) {
     const conferma = confirm(
-      `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si puÃ² annullare.`
+      `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si può annullare.`
     );
 
     if (!conferma) return;
@@ -466,7 +466,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             ordine.righe.map((riga) => (
               <div key={riga.id} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} - {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -489,7 +489,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             filtraRighePerStampa(ordine.righe, "ANDREA").map((riga) => (
               <div key={`andrea-${riga.id}`} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} - {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -512,7 +512,7 @@ export default function GestioneOrdiniPage() {
           ) : (
             filtraRighePerStampa(ordine.righe, "RAFFAELE").map((riga) => (
               <div key={`raffaele-${riga.id}`} style={{ marginBottom: 6 }}>
-                - {riga.prodotto_nome} â†’ {riga.quantita} {riga.unita}
+                - {riga.prodotto_nome} - {riga.quantita} {riga.unita}
               </div>
             ))
           )}
@@ -601,7 +601,7 @@ export default function GestioneOrdiniPage() {
             <strong>BOZZA</strong> = ordine nuovo da stampare
           </div>
           <div>
-            <strong>LAVORAZIONE</strong> = ordine giÃ  preso in carico / giÃ  stampato
+            <strong>LAVORAZIONE</strong> = ordine già  preso in carico / già  stampato
           </div>
           <div>
             <strong>PRONTO</strong> = ordine preparato
@@ -740,3 +740,5 @@ export default function GestioneOrdiniPage() {
     </div>
   );
 }
+
+
