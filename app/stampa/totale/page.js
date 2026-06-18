@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
@@ -140,6 +140,7 @@ function StampaTotaleContent() {
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
   const [ordineCelle, setOrdineCelle] = useState([]);
+  const [dataOperativa, setDataOperativa] = useState("senza-data");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -168,6 +169,9 @@ function StampaTotaleContent() {
       setCaricamento(false);
       return;
     }
+
+    const dataOrdini = (ordini || []).find((o) => o.data_operativa)?.data_operativa || "senza-data";
+    setDataOperativa(dataOrdini);
 
     const { data: clienti, error: clientiError } = await supabase
       .from("clienti")
@@ -277,6 +281,15 @@ function StampaTotaleContent() {
     setDati(risultatoOrdinato);
     setOrdineCelle([]);
     setCaricamento(false);
+  }
+
+  function salvaOrdineStampe() {
+    const idsValidi = idsOrdinati.filter((id) => !String(id).startsWith("__vuota__"));
+    const clientiOrdinati = idsValidi.map((id) => String(id).split("__parte__")[0]);
+    const clientiUnici = [...new Set(clientiOrdinati)];
+    localStorage.setItem(`ordine-stampe-${dataOperativa}`, JSON.stringify(clientiUnici));
+    localStorage.setItem("ordine-stampe-ultimo", JSON.stringify(clientiUnici));
+    alert("Ordine griglia salvato per Stampa Andrea.");
   }
 
   function stampaPagina() {
@@ -574,8 +587,23 @@ function gestisciFineDrag(event) {
           }}
         >
           <h1 style={{ margin: 0, fontSize: 20 }}>
-            Stampa Totale - Griglia Orizzontale TEST
+            Stampa Totale - Griglia Orizzontale
           </h1>
+
+          <button
+            onClick={salvaOrdineStampe}
+            style={{
+              padding: "8px 14px",
+              border: "none",
+              borderRadius: 6,
+              backgroundColor: "#047857",
+              color: "#ffffff",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            Usa questo ordine per Andrea
+          </button>
 
           <button
             onClick={stampaPagina}

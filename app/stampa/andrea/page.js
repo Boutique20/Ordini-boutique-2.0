@@ -115,11 +115,20 @@ function StampaAndreaContent() {
       }
     });
 
+    const dataOrdini = (ordini || []).find((o) => o.data_operativa)?.data_operativa || "senza-data";
+    let ordineSalvato = [];
+    try {
+      ordineSalvato = JSON.parse(localStorage.getItem("ordine-stampe-" + dataOrdini) || localStorage.getItem("ordine-stampe-ultimo") || "[]");
+    } catch (errore) {
+      ordineSalvato = [];
+    }
+    const posizioneCliente = new Map(ordineSalvato.map((cliente, index) => [cliente, index]));
+
     const risultatoOrdinato = Object.fromEntries(
-      Object.entries(risultato).sort((a, b) => a[0].localeCompare(b[0], "it"))
+      Object.entries(risultato).sort((a, b) => { const posizioneA = posizioneCliente.has(a[0]) ? posizioneCliente.get(a[0]) : 999999; const posizioneB = posizioneCliente.has(b[0]) ? posizioneCliente.get(b[0]) : 999999; return posizioneA - posizioneB || a[0].localeCompare(b[0], "it"); }).map(([cliente, prodotti]) => [cliente + "\u200B", prodotti])
     );
 
-    setDati(risultatoOrdinato);
+setDati(risultatoOrdinato);
     setCaricamento(false);
   }
 
