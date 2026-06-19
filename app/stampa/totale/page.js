@@ -117,22 +117,183 @@ function CellaOrdineSortable({ cella }) {
   );
 }
 
-function CellaVuotaSortable({ cella }) {
-  const { setNodeRef, transform, transition, isOver } = useSortable({
+function CellaDoppiaSortable({ cella, onSepara }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: cella.id,
   });
 
-    const style = {
-    transform: undefined,
-    transition: "none",
-    backgroundColor: isOver ? "#f3f4f6" : "#ffffff",
+  const style = {
+    transform: isDragging
+      ? CSS.Transform.toString(transform)
+      : undefined,
+    transition: isDragging ? transition : "none",
+    opacity: isDragging ? 0.55 : 1,
+    zIndex: isDragging ? 999 : "auto",
+    position: "relative",
   };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="cella-ordine cella-doppia"
+      {...attributes}
+      {...listeners}
+    >
+      <button
+        type="button"
+        className="no-print"
+        title="Separa i due clienti"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSepara?.(cella.id);
+        }}
+        style={{
+          position: "absolute",
+          top: 3,
+          right: 3,
+          border: "none",
+          borderRadius: 4,
+          padding: "3px 6px",
+          backgroundColor: "#dc2626",
+          color: "#ffffff",
+          fontSize: 9,
+          fontWeight: "bold",
+          cursor: "pointer",
+          zIndex: 5,
+        }}
+      >
+        Separa
+      </button>
+
+      {cella.clienti.map((cliente, indexCliente) => (
+        <div
+          className="blocco-cliente-doppio"
+          key={cliente.id}
+        >
+          <div className="cliente cliente-doppio">
+            <div>{cliente.cliente}</div>
+          </div>
+
+          <div className="lista-prodotti lista-prodotti-doppia">
+            {cliente.prodotti.map((p, indexProdotto) => (
+              <div
+                className="riga-prodotto"
+                key={`${cliente.id}-${indexProdotto}`}
+              >
+                <div className="quantita">
+                  {p.quantita} {p.unita}
+                </div>
+
+                <div className="prodotto">
+                  {p.nome}
+                  {p.note ? (
+                    <div className="nota-riga">
+                      Nota: {p.note}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {indexCliente === 0 ? (
+            <div className="separatore-clienti-doppi" />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CellaVuotaSortable({ cella, onElimina }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({
+    id: cella.id,
+  });
+
+  const style = {
+    transform: isDragging
+      ? CSS.Transform.toString(transform)
+      : undefined,
+    transition: isDragging ? transition : "none",
+    backgroundColor: isOver ? "#f3f4f6" : "#ffffff",
+    opacity: isDragging ? 0.55 : 1,
+    position: "relative",
+    cursor: cella.manuale ? "grab" : "default",
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="cella-vuota cella-vuota-sortable"
-    />
+      {...(cella.manuale ? attributes : {})}
+      {...(cella.manuale ? listeners : {})}
+    >
+      {cella.manuale ? (
+        <>
+          <div
+            className="no-print"
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#6b7280",
+              fontSize: 11,
+              fontWeight: "bold",
+              pointerEvents: "none",
+            }}
+          >
+            SPAZIO VUOTO
+          </div>
+
+          <button
+            type="button"
+            className="no-print"
+            title="Elimina spazio vuoto"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onElimina?.(cella.id);
+            }}
+            style={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              width: 24,
+              height: 24,
+              border: "none",
+              borderRadius: 4,
+              backgroundColor: "#dc2626",
+              color: "#ffffff",
+              fontWeight: "bold",
+              cursor: "pointer",
+              zIndex: 5,
+            }}
+          >
+            ×
+          </button>
+        </>
+      ) : null}
+    </div>
   );
 }
 
@@ -141,6 +302,11 @@ function StampaTotaleContent() {
   const [caricamento, setCaricamento] = useState(true);
   const [ordineCelle, setOrdineCelle] = useState([]);
   const [dataOperativa, setDataOperativa] = useState("senza-data");
+  const [celleDoppie, setCelleDoppie] = useState({});
+  const [clienteUnioneA, setClienteUnioneA] = useState("");
+  const [clienteUnioneB, setClienteUnioneB] = useState("");
+  const [celleVuoteManuali, setCelleVuoteManuali] = useState([]);
+  const [layoutCaricato, setLayoutCaricato] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -153,6 +319,45 @@ function StampaTotaleContent() {
   useEffect(() => {
     caricaDati();
   }, []);
+
+  async function caricaLayoutSalvato(dataOrdini) {
+    const { data, error } = await supabase
+      .from("stampa_totale_layout")
+      .select("layout, ordine_andrea")
+      .eq("data_operativa", dataOrdini)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Errore caricamento layout:", error);
+      setOrdineCelle([]);
+      setCelleDoppie({});
+      setCelleVuoteManuali([]);
+      setLayoutCaricato(true);
+      return;
+    }
+
+    const layout =
+      data?.layout &&
+      typeof data.layout === "object" &&
+      !Array.isArray(data.layout)
+        ? data.layout
+        : {};
+
+    setOrdineCelle(
+      Array.isArray(layout.ordineCelle) ? layout.ordineCelle : []
+    );
+    setCelleDoppie(
+      layout.celleDoppie && typeof layout.celleDoppie === "object"
+        ? layout.celleDoppie
+        : {}
+    );
+    setCelleVuoteManuali(
+      Array.isArray(layout.celleVuoteManuali)
+        ? layout.celleVuoteManuali
+        : []
+    );
+    setLayoutCaricato(true);
+  }
 
   async function caricaDati() {
     setCaricamento(true);
@@ -279,18 +484,216 @@ function StampaTotaleContent() {
     );
 
     setDati(risultatoOrdinato);
-    setOrdineCelle([]);
+    await caricaLayoutSalvato(dataOrdini);
     setCaricamento(false);
   }
 
-  function salvaOrdineStampe() {
-    const idsValidi = idsOrdinati.filter((id) => !String(id).startsWith("__vuota__"));
-    const clientiOrdinati = idsValidi.map((id) => String(id).split("__parte__")[0]);
-    const clientiUnici = [...new Set(clientiOrdinati)];
-    localStorage.setItem(`ordine-stampe-${dataOperativa}`, JSON.stringify(clientiUnici));
-    localStorage.setItem("ordine-stampe-ultimo", JSON.stringify(clientiUnici));
-    alert("Ordine griglia salvato per Stampa Andrea.");
+  function aggiungiCellaVuota() {
+    const nuovoId = `__vuota__manuale_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
+    setCelleVuoteManuali((precedenti) => [
+      ...precedenti,
+      nuovoId,
+    ]);
+
+    setOrdineCelle((ordinePrecedente) => {
+      const ordineAttuale =
+        ordinePrecedente.length > 0
+          ? [...ordinePrecedente]
+          : [...idsBase];
+
+      return [...ordineAttuale, nuovoId];
+    });
   }
+
+  function eliminaCellaVuota(idCella) {
+    setCelleVuoteManuali((precedenti) =>
+      precedenti.filter((id) => id !== idCella)
+    );
+
+    setOrdineCelle((ordinePrecedente) =>
+      ordinePrecedente.filter((id) => id !== idCella)
+    );
+  }
+
+  async function salvaOrdineStampe() {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataOperativa)) {
+      alert("Data operativa non valida: impossibile salvare la disposizione.");
+      return;
+    }
+
+    const ordineDaSalvare = idsOrdinati.filter(
+      (id) => !String(id).startsWith("__vuota__auto_")
+    );
+
+    const ordineAndrea = [];
+
+    ordineDaSalvare.forEach((id) => {
+      const idTesto = String(id);
+
+      if (idTesto.startsWith("__vuota__")) {
+        return;
+      }
+
+      if (idTesto.startsWith("__doppia__")) {
+        const clientiDellaCella = Array.isArray(
+          celleDoppie[idTesto]?.ids
+        )
+          ? celleDoppie[idTesto].ids
+          : [];
+
+        clientiDellaCella.forEach((idCliente) => {
+          ordineAndrea.push(
+            String(idCliente).split("__parte__")[0]
+          );
+        });
+
+        return;
+      }
+
+      ordineAndrea.push(idTesto.split("__parte__")[0]);
+    });
+
+    const clientiUniciAndrea = [...new Set(ordineAndrea)];
+
+    const layoutDaSalvare = {
+      ordineCelle: ordineDaSalvare,
+      celleDoppie,
+      celleVuoteManuali,
+    };
+
+    const { error } = await supabase
+      .from("stampa_totale_layout")
+      .upsert(
+        {
+          data_operativa: dataOperativa,
+          layout: layoutDaSalvare,
+          ordine_andrea: clientiUniciAndrea,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "data_operativa",
+        }
+      );
+
+    if (error) {
+      console.error("Errore salvataggio disposizione:", error);
+      alert("Errore durante il salvataggio della disposizione.");
+      return;
+    }
+
+    localStorage.setItem(
+      `ordine-stampe-${dataOperativa}`,
+      JSON.stringify(clientiUniciAndrea)
+    );
+
+    localStorage.setItem(
+      "ordine-stampe-ultimo",
+      JSON.stringify(clientiUniciAndrea)
+    );
+
+    alert(
+      "Disposizione della Stampa Totale e ordine Andrea salvati correttamente."
+    );
+  }
+
+  function unisciClienti() {
+    if (!clienteUnioneA || !clienteUnioneB) {
+      alert("Seleziona entrambi i clienti da unire.");
+      return;
+    }
+
+    if (clienteUnioneA === clienteUnioneB) {
+      alert("Devi selezionare due clienti diversi.");
+      return;
+    }
+
+    const cellaA = celleOrdiniMap.get(clienteUnioneA);
+    const cellaB = celleOrdiniMap.get(clienteUnioneB);
+
+    if (!cellaA || !cellaB) {
+      alert("Una delle due celle non è più disponibile.");
+      return;
+    }
+
+    if (cellaA.totaleParti !== 1 || cellaB.totaleParti !== 1) {
+      alert("Puoi unire soltanto clienti contenuti in una singola cella.");
+      return;
+    }
+
+    const nuovoId = `__doppia__${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
+    setCelleDoppie((precedenti) => ({
+      ...precedenti,
+      [nuovoId]: {
+        ids: [clienteUnioneA, clienteUnioneB],
+      },
+    }));
+
+    setOrdineCelle((ordinePrecedente) => {
+      const ordineAttuale =
+        ordinePrecedente.length > 0
+          ? [...ordinePrecedente]
+          : [...idsBase];
+
+      const indiceA = ordineAttuale.indexOf(clienteUnioneA);
+      const indiceB = ordineAttuale.indexOf(clienteUnioneB);
+
+      if (indiceA === -1 || indiceB === -1) {
+        return ordinePrecedente;
+      }
+
+      const primoIndice = Math.min(indiceA, indiceB);
+      const nuovoOrdine = ordineAttuale.filter(
+        (id) => id !== clienteUnioneA && id !== clienteUnioneB
+      );
+
+      nuovoOrdine.splice(primoIndice, 0, nuovoId);
+      return nuovoOrdine;
+    });
+
+    setClienteUnioneA("");
+    setClienteUnioneB("");
+  }
+
+  function separaClienti(idCellaDoppia) {
+    const gruppo = celleDoppie[idCellaDoppia];
+
+    if (!gruppo || !Array.isArray(gruppo.ids)) {
+      return;
+    }
+
+    setOrdineCelle((ordinePrecedente) => {
+      const ordineAttuale =
+        ordinePrecedente.length > 0
+          ? [...ordinePrecedente]
+          : [...idsBase];
+
+      const indiceDoppia = ordineAttuale.indexOf(idCellaDoppia);
+
+      if (indiceDoppia === -1) {
+        return ordinePrecedente;
+      }
+
+      const nuovoOrdine = ordineAttuale.filter(
+        (id) => id !== idCellaDoppia
+      );
+
+      nuovoOrdine.splice(indiceDoppia, 0, ...gruppo.ids);
+      return nuovoOrdine;
+    });
+
+    setCelleDoppie((precedenti) => {
+      const aggiornate = { ...precedenti };
+      delete aggiornate[idCellaDoppia];
+      return aggiornate;
+    });
+  }
+
 
   function stampaPagina() {
     window.print();
@@ -334,7 +737,48 @@ function StampaTotaleContent() {
     });
   });
 
-  const idsOrdini = celleOrdini.map((cella) => cella.id);
+  const celleOrdiniMap = new Map(
+    celleOrdini.map((cella) => [cella.id, cella])
+  );
+
+  const idsClientiInCelleDoppie = new Set(
+    Object.values(celleDoppie).flatMap((gruppo) =>
+      Array.isArray(gruppo?.ids) ? gruppo.ids : []
+    )
+  );
+
+  const celleOrdiniSingole = celleOrdini.filter(
+    (cella) => !idsClientiInCelleDoppie.has(cella.id)
+  );
+
+  const celleDoppieOggetti = Object.entries(celleDoppie)
+    .map(([id, gruppo]) => {
+      const clienti = (Array.isArray(gruppo?.ids) ? gruppo.ids : [])
+        .map((idCliente) => celleOrdiniMap.get(idCliente))
+        .filter(Boolean);
+
+      return {
+        id,
+        doppia: true,
+        vuota: false,
+        clienti,
+      };
+    })
+    .filter((cella) => cella.clienti.length === 2);
+
+  const celleVuoteManualiOggetti = celleVuoteManuali.map((id) => ({
+    id,
+    vuota: true,
+    manuale: true,
+  }));
+
+  const celleSenzaRiempimento = [
+    ...celleOrdiniSingole,
+    ...celleDoppieOggetti,
+    ...celleVuoteManualiOggetti,
+  ];
+
+  const idsOrdini = celleSenzaRiempimento.map((cella) => cella.id);
 
   const numeroSlotTotali = Math.max(
     CELLE_PER_PAGINA,
@@ -345,12 +789,16 @@ function StampaTotaleContent() {
 
   const celleVuote = Array.from({ length: numeroCelleVuote }).map(
     (_, index) => ({
-      id: `__vuota__${index}`,
+      id: `__vuota__auto_${index}`,
       vuota: true,
+      manuale: false,
     })
   );
 
-  const tutteLeCelleBase = [...celleOrdini, ...celleVuote];
+  const tutteLeCelleBase = [
+    ...celleSenzaRiempimento,
+    ...celleVuote,
+  ];
 
   const celleMap = new Map(tutteLeCelleBase.map((cella) => [cella.id, cella]));
   const idsBase = tutteLeCelleBase.map((cella) => cella.id);
@@ -368,6 +816,10 @@ function StampaTotaleContent() {
     .filter((cella) => Boolean(cella));
 
   const pagine = chunkArray(celleOrdinate, CELLE_PER_PAGINA);
+
+  const clientiUnibili = celleOrdiniSingole.filter(
+    (cella) => cella.totaleParti === 1
+  );
 
 function gestisciFineDrag(event) {
   const { active, over } = event;
@@ -568,6 +1020,13 @@ function gestisciFineDrag(event) {
           word-break: break-word;
         }
 
+        .separatore-clienti-doppi {
+          width: 100%;
+          border-top: 2px solid #000000;
+          margin: 2mm 0;
+          flex: 0 0 auto;
+        }
+
         .nota-riga {
           font-style: italic;
           font-size: 7.5px;
@@ -591,6 +1050,95 @@ function gestisciFineDrag(event) {
           </h1>
 
           <button
+            type="button"
+            onClick={aggiungiCellaVuota}
+            style={{
+              padding: "8px 14px",
+              border: "none",
+              borderRadius: 6,
+              backgroundColor: "#2563eb",
+              color: "#ffffff",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            Aggiungi cella vuota
+          </button>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <select
+              value={clienteUnioneA}
+              onChange={(event) =>
+                setClienteUnioneA(event.target.value)
+              }
+              style={{
+                padding: "7px 8px",
+                border: "1px solid #9ca3af",
+                borderRadius: 6,
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <option value="">Cliente sopra</option>
+              {clientiUnibili.map((cella) => (
+                <option
+                  key={`a-${cella.id}`}
+                  value={cella.id}
+                  disabled={cella.id === clienteUnioneB}
+                >
+                  {cella.cliente}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={clienteUnioneB}
+              onChange={(event) =>
+                setClienteUnioneB(event.target.value)
+              }
+              style={{
+                padding: "7px 8px",
+                border: "1px solid #9ca3af",
+                borderRadius: 6,
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <option value="">Cliente sotto</option>
+              {clientiUnibili.map((cella) => (
+                <option
+                  key={`b-${cella.id}`}
+                  value={cella.id}
+                  disabled={cella.id === clienteUnioneA}
+                >
+                  {cella.cliente}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={unisciClienti}
+              style={{
+                padding: "8px 12px",
+                border: "none",
+                borderRadius: 6,
+                backgroundColor: "#7c3aed",
+                color: "#ffffff",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Unisci clienti
+            </button>
+          </div>
+
+          <button
             onClick={salvaOrdineStampe}
             style={{
               padding: "8px 14px",
@@ -602,7 +1150,7 @@ function gestisciFineDrag(event) {
               cursor: "pointer",
             }}
           >
-            Usa questo ordine per Andrea
+            Salva disposizione
           </button>
 
           <button
@@ -648,12 +1196,25 @@ function gestisciFineDrag(event) {
 
                   <div className="griglia-stampa">
                     {pagina.map((cella) =>
-                      cella.vuota ? (
-                        <CellaVuotaSortable cella={cella} key={cella.id} />
-                      ) : (
-                        <CellaOrdineSortable cella={cella} key={cella.id} />
-                      )
-                    )}
+  cella.vuota ? (
+    <CellaVuotaSortable
+      cella={cella}
+      key={cella.id}
+      onElimina={eliminaCellaVuota}
+    />
+  ) : cella.doppia ? (
+    <CellaDoppiaSortable
+      cella={cella}
+      key={cella.id}
+      onSepara={separaClienti}
+    />
+  ) : (
+    <CellaOrdineSortable
+      cella={cella}
+      key={cella.id}
+    />
+  )
+)}
                   </div>
                 </div>
               );

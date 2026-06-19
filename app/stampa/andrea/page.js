@@ -117,11 +117,42 @@ function StampaAndreaContent() {
 
     const dataOrdini = (ordini || []).find((o) => o.data_operativa)?.data_operativa || "senza-data";
     let ordineSalvato = [];
-    try {
-      ordineSalvato = JSON.parse(localStorage.getItem("ordine-stampe-" + dataOrdini) || localStorage.getItem("ordine-stampe-ultimo") || "[]");
-    } catch (errore) {
-      ordineSalvato = [];
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataOrdini)) {
+      const { data: layoutSalvato, error: layoutError } =
+        await supabase
+          .from("stampa_totale_layout")
+          .select("ordine_andrea")
+          .eq("data_operativa", dataOrdini)
+          .maybeSingle();
+
+      if (
+        !layoutError &&
+        Array.isArray(layoutSalvato?.ordine_andrea)
+      ) {
+        ordineSalvato = layoutSalvato.ordine_andrea;
+      } else {
+        if (layoutError) {
+          console.error(
+            "Errore lettura ordine Andrea da Supabase:",
+            layoutError
+          );
+        }
+
+        try {
+          ordineSalvato = JSON.parse(
+            localStorage.getItem(
+              "ordine-stampe-" + dataOrdini
+            ) ||
+              localStorage.getItem("ordine-stampe-ultimo") ||
+              "[]"
+          );
+        } catch (errore) {
+          ordineSalvato = [];
+        }
+      }
     }
+
     const posizioneCliente = new Map(ordineSalvato.map((cliente, index) => [cliente, index]));
 
     const risultatoOrdinato = Object.fromEntries(
