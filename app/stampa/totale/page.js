@@ -830,7 +830,12 @@ function gestisciFineDrag(event) {
 
   setOrdineCelle((ordinePrecedente) => {
     const ordineAttuale =
-      ordinePrecedente.length > 0 ? [...ordinePrecedente] : [...idsBase];
+      ordinePrecedente.length > 0
+        ? [
+            ...ordinePrecedente.filter((id) => idsBase.includes(id)),
+            ...idsBase.filter((id) => !ordinePrecedente.includes(id)),
+          ]
+        : [...idsBase];
 
     const indiceVecchio = ordineAttuale.indexOf(active.id);
     const indiceNuovo = ordineAttuale.indexOf(over.id);
