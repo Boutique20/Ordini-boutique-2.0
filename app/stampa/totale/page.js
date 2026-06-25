@@ -524,9 +524,7 @@ function StampaTotaleContent() {
       return;
     }
 
-    const ordineDaSalvare = idsOrdinati.filter(
-      (id) => !String(id).startsWith("__vuota__auto_")
-    );
+    const ordineDaSalvare = [...idsOrdinati];
 
     const ordineAndrea = [];
 
