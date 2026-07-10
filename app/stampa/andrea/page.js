@@ -3,21 +3,101 @@
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
+function getDataOperativa() {
+  const now = new Date();
+
+  const roma = new Date(
+    now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
+  );
+
+  const y = roma.getFullYear();
+  const m = String(roma.getMonth() + 1).padStart(2, "0");
+  const d = String(roma.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
+}
+
+function formatDataConsegna(dataIso) {
+  if (!dataIso) return "-";
+
+  const [anno, mese, giorno] = dataIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, giorno);
+
+  return data.toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function cambiaMeseIso(meseIso, spostamento) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1 + spostamento, 1);
+
+  const y = data.getFullYear();
+  const m = String(data.getMonth() + 1).padStart(2, "0");
+
+  return `${y}-${m}`;
+}
+
+function formatMeseCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, 1);
+
+  return data.toLocaleDateString("it-IT", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function getGiorniCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const primoGiorno = new Date(anno, mese - 1, 1);
+  const ultimoGiorno = new Date(anno, mese, 0);
+
+  const vuotiPrima = (primoGiorno.getDay() + 6) % 7;
+  const celle = [];
+
+  for (let i = 0; i < vuotiPrima; i++) {
+    celle.push(null);
+  }
+
+  for (let giorno = 1; giorno <= ultimoGiorno.getDate(); giorno++) {
+    const data = new Date(anno, mese - 1, giorno);
+
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, "0");
+    const d = String(data.getDate()).padStart(2, "0");
+
+    celle.push({
+      giorno,
+      iso: `${y}-${m}-${d}`,
+    });
+  }
+
+  return celle;
+}
+
 function StampaAndreaContent() {
   const [dati, setDati] = useState({});
   const [caricamento, setCaricamento] = useState(true);
+  const [dataOperativa, setDataOperativa] = useState(getDataOperativa());
+  const [meseCalendario, setMeseCalendario] = useState(getDataOperativa().slice(0, 7));
 
   useEffect(() => {
-    caricaDati();
-  }, []);
+    caricaDati(dataOperativa);
+  }, [dataOperativa]);
 
-  async function caricaDati() {
+  async function caricaDati(dataSelezionata = dataOperativa) {
     setCaricamento(true);
+    setDati({});
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
       .eq("stato", "bozza")
+      .eq("data_operativa", dataSelezionata)
       .order("id", { ascending: true });
 
     if (ordiniError) {
@@ -115,7 +195,7 @@ function StampaAndreaContent() {
       }
     });
 
-    const dataOrdini = (ordini || []).find((o) => o.data_operativa)?.data_operativa || "senza-data";
+    const dataOrdini = dataSelezionata;
     let ordineSalvato = [];
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(dataOrdini)) {
@@ -184,7 +264,7 @@ setDati(risultatoOrdinato);
         }
 
         @media print {
-          button {
+          button, .no-print {
             display: none !important;
           }
 
@@ -209,7 +289,7 @@ setDati(risultatoOrdinato);
         >
           <div>
             <h1 style={{ margin: 0, fontSize: 22 }}>
-              Preparazione congelato - Ordini in bozza
+              Preparazione congelato - Ordini in bozza - {formatDataConsegna(dataOperativa)}
             </h1>
           </div>
 
@@ -229,10 +309,175 @@ setDati(risultatoOrdinato);
           </button>
         </div>
 
+        <div
+          className="no-print"
+          style={{
+            marginBottom: 18,
+            borderRadius: 14,
+            padding: 16,
+            backgroundColor: "#0f172a",
+            border: "1px solid rgba(14,165,233,0.45)",
+            color: "#ffffff",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              marginBottom: 8,
+              color: "#7dd3fc",
+            }}
+          >
+            Seleziona data Andrea
+          </div>
+
+          <div
+            style={{
+              fontSize: 14,
+              color: "#cbd5e1",
+              marginBottom: 14,
+            }}
+          >
+            Mostra solo i prodotti Andrea degli ordini in bozza della data selezionata.
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 14,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setMeseCalendario(cambiaMeseIso(meseCalendario, -1))}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.18)",
+                backgroundColor: "#1e293b",
+                color: "#ffffff",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              â†
+            </button>
+
+            <div
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#ffffff",
+                textTransform: "capitalize",
+              }}
+            >
+              {formatMeseCalendario(meseCalendario)}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMeseCalendario(cambiaMeseIso(meseCalendario, 1))}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.18)",
+                backgroundColor: "#1e293b",
+                color: "#ffffff",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              â†’
+            </button>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, 1fr)",
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(
+              (giorno) => (
+                <div
+                  key={giorno}
+                  style={{
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: "bold",
+                    color: "#7dd3fc",
+                  }}
+                >
+                  {giorno}
+                </div>
+              )
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, 1fr)",
+              gap: 6,
+            }}
+          >
+            {getGiorniCalendario(meseCalendario).map((giorno, indice) => {
+              if (!giorno) {
+                return <div key={`vuoto-${indice}`} />;
+              }
+
+              const selezionato = giorno.iso === dataOperativa;
+
+              return (
+                <button
+                  type="button"
+                  key={giorno.iso}
+                  onClick={() => setDataOperativa(giorno.iso)}
+                  style={{
+                    minHeight: 42,
+                    borderRadius: 10,
+                    border: selezionato
+                      ? "2px solid #ffffff"
+                      : "1px solid rgba(255,255,255,0.16)",
+                    backgroundColor: selezionato ? "#0284c7" : "#0f172a",
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    cursor: "pointer",
+                  }}
+                >
+                  {giorno.giorno}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              marginTop: 14,
+              color: "#ffffff",
+              fontSize: 15,
+              backgroundColor: "rgba(14,165,233,0.14)",
+              border: "1px solid rgba(125,211,252,0.35)",
+              borderRadius: 10,
+              padding: 12,
+            }}
+          >
+            Data visualizzata: <strong>{formatDataConsegna(dataOperativa)}</strong>
+          </div>
+        </div>
+
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine in bozza per preparazione congelato.</p>
+          <p>Nessun ordine Andrea in bozza per la data selezionata.</p>
         ) : (
           <div
             style={{
@@ -293,12 +538,12 @@ setDati(risultatoOrdinato);
                       <span>{p.nome}</span>
                       {p.note ? (
                         <span style={{ marginLeft: 6, fontStyle: "italic" }}>
-                          — Nota: {p.note}
+                          Ã¢â‚¬â€ Nota: {p.note}
                         </span>
                       ) : null}
                       {index !== prodotti.length - 1 && (
                         <span style={{ marginLeft: 12, marginRight: 4 }}>
-                          •
+                          Ã¢â‚¬Â¢
                         </span>
                       )}
                     </span>

@@ -199,22 +199,73 @@ function getDataOperativa() {
     now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
   );
 
-  const anno = roma.getFullYear();
-  const mese = roma.getMonth();
-  const giorno = roma.getDate();
-  const ore = roma.getHours();
-
-  let dataBase = new Date(anno, mese, giorno);
-
-  if (ore < 5) {
-    dataBase.setDate(dataBase.getDate() - 1);
-  }
-
-  const y = dataBase.getFullYear();
-  const m = String(dataBase.getMonth() + 1).padStart(2, "0");
-  const d = String(dataBase.getDate()).padStart(2, "0");
+  const y = roma.getFullYear();
+  const m = String(roma.getMonth() + 1).padStart(2, "0");
+  const d = String(roma.getDate()).padStart(2, "0");
 
   return `${y}-${m}-${d}`;
+}
+
+function formatDataConsegna(dataIso) {
+  if (!dataIso) return "-";
+
+  const [anno, mese, giorno] = dataIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, giorno);
+
+  return data.toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function cambiaMeseIso(meseIso, spostamento) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1 + spostamento, 1);
+
+  const y = data.getFullYear();
+  const m = String(data.getMonth() + 1).padStart(2, "0");
+
+  return `${y}-${m}`;
+}
+
+function formatMeseCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, 1);
+
+  return data.toLocaleDateString("it-IT", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function getGiorniCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const primoGiorno = new Date(anno, mese - 1, 1);
+  const ultimoGiorno = new Date(anno, mese, 0);
+
+  const vuotiPrima = (primoGiorno.getDay() + 6) % 7;
+  const celle = [];
+
+  for (let i = 0; i < vuotiPrima; i++) {
+    celle.push(null);
+  }
+
+  for (let giorno = 1; giorno <= ultimoGiorno.getDate(); giorno++) {
+    const data = new Date(anno, mese - 1, giorno);
+
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, "0");
+    const d = String(data.getDate()).padStart(2, "0");
+
+    celle.push({
+      giorno,
+      iso: `${y}-${m}-${d}`,
+    });
+  }
+
+  return celle;
 }
 
 export default function OrdineManualePage() {
@@ -230,6 +281,8 @@ export default function OrdineManualePage() {
   const [unitaSelezionate, setUnitaSelezionate] = useState({});
   const [noteProdotti, setNoteProdotti] = useState({});
   const [righeAggiuntive, setRigheAggiuntive] = useState({});
+  const [dataConsegna, setDataConsegna] = useState(getDataOperativa());
+  const [meseCalendario, setMeseCalendario] = useState(getDataOperativa().slice(0, 7));
 
   useEffect(() => {
     caricaDati();
@@ -260,7 +313,7 @@ export default function OrdineManualePage() {
       .select("prodotto_id, unita");
 
     if (unitaError) {
-      console.error("Errore unità:", unitaError);
+      console.error("Errore unitÃ :", unitaError);
       alert(JSON.stringify(unitaError, null, 2));
       setCaricamento(false);
       return;
@@ -447,18 +500,22 @@ export default function OrdineManualePage() {
     }
 
     if (riepilogoOrdine.length === 0) {
-      alert("Inserisci almeno una quantità.");
+      alert("Inserisci almeno una quantitÃ .");
       return;
     }
 
-    if (!confirm("Confermi l'inserimento dell'ordine manuale?")) {
+    const dataOperativa = dataConsegna;
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataOperativa)) {
+      alert("Seleziona una data consegna valida.");
+      return;
+    }
+
+    if (!confirm(`Confermi l'inserimento dell'ordine manuale per consegna ${formatDataConsegna(dataOperativa)}?`)) {
       return;
     }
 
     setInvioInCorso(true);
-
-    const dataOperativa = getDataOperativa();
-
     const { data: ordine, error: ordineError } = await supabase
       .from("ordini")
       .insert({
@@ -519,6 +576,8 @@ export default function OrdineManualePage() {
     setNote("");
     setNoteProdotti({});
     setRigheAggiuntive({});
+    setDataConsegna(getDataOperativa());
+    setMeseCalendario(getDataOperativa().slice(0, 7));
 
     const resetUnita = {};
     for (const prodotto of prodotti) {
@@ -766,7 +825,7 @@ export default function OrdineManualePage() {
                               onChange={(e) =>
                                 aggiornaQuantita(p.id, e.target.value)
                               }
-                              placeholder="Qtà"
+                              placeholder="QtÃ "
                               style={{
                                 width: 95,
                                 padding: "12px 10px",
@@ -876,7 +935,7 @@ export default function OrdineManualePage() {
                                   minWidth: 105,
                                 }}
                               >
-                                Altra quantità {index + 2}
+                                Altra quantitÃ  {index + 2}
                               </div>
 
                               <input
@@ -892,7 +951,7 @@ export default function OrdineManualePage() {
                                     e.target.value
                                   )
                                 }
-                                placeholder="Qtà"
+                                placeholder="QtÃ "
                                 style={{
                                   width: 95,
                                   padding: "12px 10px",
@@ -965,7 +1024,7 @@ export default function OrdineManualePage() {
                                   e.target.value
                                 )
                               }
-                              placeholder="Nota per questa quantità"
+                              placeholder="Nota per questa quantitÃ "
                               style={{
                                 flex: 1,
                                 minWidth: 220,
@@ -1015,7 +1074,7 @@ export default function OrdineManualePage() {
                             fontSize: 14,
                           }}
                         >
-                          + Aggiungi altra quantità
+                          + Aggiungi altra quantitÃ 
                         </button>
                       </div>
                     );
@@ -1056,6 +1115,186 @@ export default function OrdineManualePage() {
             />
           </div>
 
+          <div
+            style={{
+              marginTop: 24,
+              borderRadius: 14,
+              padding: 16,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 8,
+                color: "#7dd3fc",
+              }}
+            >
+              Data consegna
+            </div>
+
+            <div
+              style={{
+                color: "#cbd5e1",
+                fontSize: 14,
+                marginBottom: 14,
+              }}
+            >
+              Seleziona direttamente dal calendario il giorno in cui vuoi inserire l'ordine.
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <button
+                type="button"
+                disabled={meseCalendario <= getDataOperativa().slice(0, 7)}
+                onClick={() =>
+                  setMeseCalendario(cambiaMeseIso(meseCalendario, -1))
+                }
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  backgroundColor:
+                    meseCalendario <= getDataOperativa().slice(0, 7)
+                      ? "#334155"
+                      : "#1e293b",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  cursor:
+                    meseCalendario <= getDataOperativa().slice(0, 7)
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                ←
+              </button>
+
+              <div
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: "#ffffff",
+                  textTransform: "capitalize",
+                }}
+              >
+                {formatMeseCalendario(meseCalendario)}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMeseCalendario(cambiaMeseIso(meseCalendario, 1))
+                }
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  backgroundColor: "#1e293b",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                →
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 6,
+                marginBottom: 8,
+              }}
+            >
+              {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(
+                (giorno) => (
+                  <div
+                    key={giorno}
+                    style={{
+                      textAlign: "center",
+                      fontSize: 13,
+                      fontWeight: "bold",
+                      color: "#7dd3fc",
+                    }}
+                  >
+                    {giorno}
+                  </div>
+                )
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 6,
+              }}
+            >
+              {getGiorniCalendario(meseCalendario).map((giorno, indice) => {
+                if (!giorno) {
+                  return <div key={`vuoto-${indice}`} />;
+                }
+
+                const disabilitato = giorno.iso < getDataOperativa();
+                const selezionato = giorno.iso === dataConsegna;
+
+                return (
+                  <button
+                    type="button"
+                    key={giorno.iso}
+                    disabled={disabilitato}
+                    onClick={() => setDataConsegna(giorno.iso)}
+                    style={{
+                      minHeight: 42,
+                      borderRadius: 10,
+                      border: selezionato
+                        ? "2px solid #ffffff"
+                        : "1px solid rgba(255,255,255,0.16)",
+                      backgroundColor: disabilitato
+                        ? "#334155"
+                        : selezionato
+                        ? "#0284c7"
+                        : "#0f172a",
+                      color: disabilitato ? "#94a3b8" : "#ffffff",
+                      fontWeight: "bold",
+                      fontSize: 15,
+                      cursor: disabilitato ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {giorno.giorno}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
+                color: "#ffffff",
+                fontSize: 15,
+                backgroundColor: "rgba(14,165,233,0.14)",
+                border: "1px solid rgba(125,211,252,0.35)",
+                borderRadius: 10,
+                padding: 12,
+              }}
+            >
+              Data selezionata: <strong>{formatDataConsegna(dataConsegna)}</strong>
+            </div>
+          </div>
+
           <div style={{ marginTop: 36 }}>
             <div
               style={{
@@ -1068,6 +1307,19 @@ export default function OrdineManualePage() {
               Riepilogo ordine
             </div>
 
+            <div
+              style={{
+                marginBottom: 14,
+                color: "#ffffff",
+                fontSize: 15,
+                backgroundColor: "rgba(14,165,233,0.14)",
+                border: "1px solid rgba(125,211,252,0.35)",
+                borderRadius: 10,
+                padding: 12,
+              }}
+            >
+              Consegna prevista: <strong>{formatDataConsegna(dataConsegna)}</strong>
+            </div>
             {riepilogoOrdine.length === 0 ? (
               <p style={{ color: "#cbd5e1" }}>Nessun prodotto selezionato.</p>
             ) : (
@@ -1081,7 +1333,7 @@ export default function OrdineManualePage() {
               >
                 {riepilogoOrdine.map((riga) => (
                   <div key={riga.rigaId || riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
-                    - {riga.nome} → {riga.quantita} {riga.unita}
+                    - {riga.nome} â†’ {riga.quantita} {riga.unita}
                     {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
                 ))}

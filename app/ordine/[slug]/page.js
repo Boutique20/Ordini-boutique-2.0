@@ -214,22 +214,73 @@ function getDataOperativa() {
     now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
   );
 
-  const anno = roma.getFullYear();
-  const mese = roma.getMonth();
-  const giorno = roma.getDate();
-  const ore = roma.getHours();
-
-  let dataBase = new Date(anno, mese, giorno);
-
-  if (ore < 5) {
-    dataBase.setDate(dataBase.getDate() - 1);
-  }
-
-  const y = dataBase.getFullYear();
-  const m = String(dataBase.getMonth() + 1).padStart(2, "0");
-  const d = String(dataBase.getDate()).padStart(2, "0");
+  const y = roma.getFullYear();
+  const m = String(roma.getMonth() + 1).padStart(2, "0");
+  const d = String(roma.getDate()).padStart(2, "0");
 
   return `${y}-${m}-${d}`;
+}
+
+function formatDataConsegna(dataIso) {
+  if (!dataIso) return "-";
+
+  const [anno, mese, giorno] = dataIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, giorno);
+
+  return data.toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function cambiaMeseIso(meseIso, spostamento) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1 + spostamento, 1);
+
+  const y = data.getFullYear();
+  const m = String(data.getMonth() + 1).padStart(2, "0");
+
+  return `${y}-${m}`;
+}
+
+function formatMeseCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const data = new Date(anno, mese - 1, 1);
+
+  return data.toLocaleDateString("it-IT", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function getGiorniCalendario(meseIso) {
+  const [anno, mese] = meseIso.split("-").map(Number);
+  const primoGiorno = new Date(anno, mese - 1, 1);
+  const ultimoGiorno = new Date(anno, mese, 0);
+
+  const vuotiPrima = (primoGiorno.getDay() + 6) % 7;
+  const celle = [];
+
+  for (let i = 0; i < vuotiPrima; i++) {
+    celle.push(null);
+  }
+
+  for (let giorno = 1; giorno <= ultimoGiorno.getDate(); giorno++) {
+    const data = new Date(anno, mese - 1, giorno);
+
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, "0");
+    const d = String(data.getDate()).padStart(2, "0");
+
+    celle.push({
+      giorno,
+      iso: `${y}-${m}-${d}`,
+    });
+  }
+
+  return celle;
 }
 
 function getColoreStato(stato) {
@@ -259,6 +310,7 @@ export default function OrdineClientePage() {
   const [storicoOrdini, setStoricoOrdini] = useState([]);
   const [ricerca, setRicerca] = useState("");
   const [mostraStorico, setMostraStorico] = useState(false);
+  const [dataConsegna, setDataConsegna] = useState(getDataOperativa());
 
   const [quantita, setQuantita] = useState({});
   const [unitaProdotti, setUnitaProdotti] = useState({});
@@ -309,7 +361,7 @@ export default function OrdineClientePage() {
       .select("prodotto_id, unita");
 
     if (unitaError) {
-      console.error("Errore unità:", unitaError);
+      console.error("Errore unitÃƒÆ’Ã‚Â :", unitaError);
       alert(JSON.stringify(unitaError, null, 2));
       setCaricamento(false);
       return;
@@ -481,17 +533,22 @@ export default function OrdineClientePage() {
     }
 
     if (riepilogoOrdine.length === 0) {
-      alert("Inserisci almeno una quantità");
+      alert("Inserisci almeno una quantitÃƒÆ’Ã‚Â ");
       return;
     }
 
-    if (!confirm("Confermi l'invio dell'ordine?")) {
+    const dataOperativa = dataConsegna;
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataOperativa)) {
+      alert("Seleziona una data consegna valida.");
+      return;
+    }
+
+    if (!confirm(`Confermi l'invio dell'ordine per consegna ${formatDataConsegna(dataOperativa)}?`)) {
       return;
     }
 
     setInvioInCorso(true);
-
-    const dataOperativa = getDataOperativa();
 
     const { data: ordine, error: ordineError } = await supabase
       .from("ordini")
@@ -544,7 +601,7 @@ try {
   console.error("Errore notifica Telegram:", error);
 }
     alert(
-      "Ordine ricevuto ✅ Stiamo verificando la disponibilità e procediamo con la preparazione."
+      "Ordine ricevuto ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Stiamo verificando la disponibilitÃƒÆ’Ã‚Â  e procediamo con la preparazione."
     );
 
     setQuantita({});
@@ -770,7 +827,7 @@ try {
                               onChange={(e) =>
                                 aggiornaQuantita(p.id, e.target.value)
                               }
-                              placeholder="Qtà"
+                              placeholder="QtÃƒÆ’Ã‚Â "
                               style={{
                                 width: 95,
                                 padding: "12px 10px",
@@ -886,6 +943,69 @@ try {
             />
           </div>
 
+          <div
+            style={{
+              marginTop: 24,
+              borderRadius: 14,
+              padding: 16,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 8,
+                color: "#7dd3fc",
+              }}
+            >
+              Data consegna
+            </div>
+
+            <div
+              style={{
+                color: "#cbd5e1",
+                fontSize: 14,
+                marginBottom: 12,
+              }}
+            >
+              Seleziona dal calendario il giorno in cui desideri ricevere la merce.
+            </div>
+
+            <input
+              type="date"
+              value={dataConsegna}
+              min={getDataOperativa()}
+              onChange={(e) => setDataConsegna(e.target.value)}
+              style={{
+                width: "100%",
+                padding: 16,
+                borderRadius: 12,
+                border: "2px solid #38bdf8",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
+                fontSize: 18,
+                fontWeight: "bold",
+                boxSizing: "border-box",
+                marginBottom: 12,
+              }}
+            />
+
+            <div
+              style={{
+                color: "#ffffff",
+                fontSize: 15,
+                backgroundColor: "rgba(14,165,233,0.14)",
+                border: "1px solid rgba(125,211,252,0.35)",
+                borderRadius: 10,
+                padding: 12,
+              }}
+            >
+              Data selezionata: <strong>{formatDataConsegna(dataConsegna)}</strong>
+            </div>
+          </div>
+
           <div style={{ marginTop: 36 }}>
             <div
               style={{
@@ -898,6 +1018,19 @@ try {
               Riepilogo ordine
             </div>
 
+            <div
+              style={{
+                marginBottom: 14,
+                color: "#ffffff",
+                fontSize: 15,
+                backgroundColor: "rgba(14,165,233,0.14)",
+                border: "1px solid rgba(125,211,252,0.35)",
+                borderRadius: 10,
+                padding: 12,
+              }}
+            >
+              Consegna prevista: <strong>{formatDataConsegna(dataConsegna)}</strong>
+            </div>
             {riepilogoOrdine.length === 0 ? (
               <p style={{ color: "#cbd5e1" }}>Nessun prodotto selezionato.</p>
             ) : (
@@ -911,7 +1044,7 @@ try {
               >
                 {riepilogoOrdine.map((riga) => (
                   <div key={riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
-                    - {riga.nome} → {riga.quantita} {riga.unita}
+                    - {riga.nome} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {riga.quantita} {riga.unita}
                     {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
                 ))}
@@ -1031,7 +1164,7 @@ try {
                               marginBottom: 4,
                             }}
                           >
-                            Data operativa: {ordine.data_operativa || "-"}
+                            Data consegna: {ordine.data_operativa || "-"}
                           </div>
 
                           {ordine.note_generali && (
