@@ -313,7 +313,7 @@ export default function OrdineManualePage() {
       .select("prodotto_id, unita");
 
     if (unitaError) {
-      console.error("Errore unitÃ :", unitaError);
+        console.error("Errore unit\u00e0:", unitaError);
       alert(JSON.stringify(unitaError, null, 2));
       setCaricamento(false);
       return;
@@ -500,7 +500,7 @@ export default function OrdineManualePage() {
     }
 
     if (riepilogoOrdine.length === 0) {
-      alert("Inserisci almeno una quantitÃ .");
+      alert("Inserisci almeno una quantit\u00e0.");
       return;
     }
 
@@ -825,7 +825,7 @@ export default function OrdineManualePage() {
                               onChange={(e) =>
                                 aggiornaQuantita(p.id, e.target.value)
                               }
-                              placeholder="QtÃ "
+                              placeholder={"Qt\u00e0"}
                               style={{
                                 width: 95,
                                 padding: "12px 10px",
@@ -935,7 +935,7 @@ export default function OrdineManualePage() {
                                   minWidth: 105,
                                 }}
                               >
-                                Altra quantitÃ  {index + 2}
+                                Altra quantit{"\u00e0"} {index + 2}
                               </div>
 
                               <input
@@ -951,7 +951,7 @@ export default function OrdineManualePage() {
                                     e.target.value
                                   )
                                 }
-                                placeholder="QtÃ "
+                                  placeholder={"Qt\u00e0"}
                                 style={{
                                   width: 95,
                                   padding: "12px 10px",
@@ -1024,7 +1024,7 @@ export default function OrdineManualePage() {
                                   e.target.value
                                 )
                               }
-                              placeholder="Nota per questa quantitÃ "
+                          placeholder={"Nota per questa quantit\u00e0"}
                               style={{
                                 flex: 1,
                                 minWidth: 220,
@@ -1074,7 +1074,7 @@ export default function OrdineManualePage() {
                             fontSize: 14,
                           }}
                         >
-                          + Aggiungi altra quantitÃ 
+                      + Aggiungi altra quantit{"\u00e0"}
                         </button>
                       </div>
                     );
@@ -1333,7 +1333,7 @@ export default function OrdineManualePage() {
               >
                 {riepilogoOrdine.map((riga) => (
                   <div key={riga.rigaId || riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
-                    - {riga.nome} â†’ {riga.quantita} {riga.unita}
+                    - {riga.nome} {"\u2192"} {riga.quantita} {riga.unita}
                     {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
                 ))}

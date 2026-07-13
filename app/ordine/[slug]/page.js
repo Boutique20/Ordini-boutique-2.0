@@ -361,7 +361,7 @@ export default function OrdineClientePage() {
       .select("prodotto_id, unita");
 
     if (unitaError) {
-      console.error("Errore unitÃƒÆ’Ã‚Â :", unitaError);
+        console.error("Errore unit\u00e0:", unitaError);
       alert(JSON.stringify(unitaError, null, 2));
       setCaricamento(false);
       return;
@@ -533,7 +533,7 @@ export default function OrdineClientePage() {
     }
 
     if (riepilogoOrdine.length === 0) {
-      alert("Inserisci almeno una quantitÃƒÆ’Ã‚Â ");
+      alert("Inserisci almeno una quantit\u00e0.");
       return;
     }
 
@@ -601,7 +601,7 @@ try {
   console.error("Errore notifica Telegram:", error);
 }
     alert(
-      "Ordine ricevuto ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Stiamo verificando la disponibilitÃƒÆ’Ã‚Â  e procediamo con la preparazione."
+          "Ordine ricevuto. Stiamo verificando la disponibilit\u00e0 e procediamo con la preparazione."
     );
 
     setQuantita({});
@@ -827,7 +827,7 @@ try {
                               onChange={(e) =>
                                 aggiornaQuantita(p.id, e.target.value)
                               }
-                              placeholder="QtÃƒÆ’Ã‚Â "
+                              placeholder={"Qt\u00e0"}
                               style={{
                                 width: 95,
                                 padding: "12px 10px",
@@ -1044,7 +1044,7 @@ try {
               >
                 {riepilogoOrdine.map((riga) => (
                   <div key={riga.id} style={{ marginBottom: 8, fontSize: 16 }}>
-                    - {riga.nome} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {riga.quantita} {riga.unita}
+                    - {riga.nome} {"\u2192"} {riga.quantita} {riga.unita}
                     {riga.note ? ` | Nota: ${riga.note}` : ""}
                   </div>
                 ))}

@@ -365,7 +365,7 @@ function CellaVuotaSortable({ cella, onElimina }) {
               zIndex: 5,
             }}
           >
-            Ãƒâ€”
+            {"\u00d7"}
           </button>
         </>
       ) : null}
@@ -689,7 +689,7 @@ function StampaTotaleContent() {
     const cellaB = celleOrdiniMap.get(clienteUnioneB);
 
     if (!cellaA || !cellaB) {
-      alert("Una delle due celle non ÃƒÂ¨ piÃƒÂ¹ disponibile.");
+      alert("Una delle due celle non \u00e8 pi\u00f9 disponibile.");
       return;
     }
 
@@ -1304,7 +1304,7 @@ function gestisciFineDrag(event) {
               cursor: "pointer",
             }}
           >
-            â†
+                          {"\u2192"}
           </button>
 
           <div
@@ -1333,7 +1333,7 @@ function gestisciFineDrag(event) {
               cursor: "pointer",
             }}
           >
-            â†’
+            {"\u2192"}
           </button>
         </div>
 
@@ -1430,7 +1430,7 @@ function gestisciFineDrag(event) {
               return (
                 <div className="pagina-stampa" key={`pagina-${indexPagina}`}>
                   <div className="intestazione-stampa">
-                    <div>STAMPA TOTALE Ã¢â‚¬â€ ORDINI IN BOZZA</div>
+                    <div>STAMPA TOTALE - ORDINI IN BOZZA</div>
                     <div>
                       Generata: {formatDataOra(new Date().toISOString())}
                     </div>

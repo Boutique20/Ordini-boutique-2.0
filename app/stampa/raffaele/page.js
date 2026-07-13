@@ -551,7 +551,7 @@ function StampaRaffaeleContent() {
                         }}
                       >
                         {p.quantita} {p.unita} {p.nome}
-                        {p.note ? ` â€” Nota: ${p.note}` : ""}
+                            {p.note ? ` - Nota: ${p.note}` : ""}
                       </div>
                     </div>
                   ))}

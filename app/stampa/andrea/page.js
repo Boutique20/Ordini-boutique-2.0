@@ -363,7 +363,7 @@ setDati(risultatoOrdinato);
                 cursor: "pointer",
               }}
             >
-              â†
+            {"\u2192"}
             </button>
 
             <div
@@ -392,7 +392,7 @@ setDati(risultatoOrdinato);
                 cursor: "pointer",
               }}
             >
-              â†’
+              {"\u2192"}
             </button>
           </div>
 
@@ -538,12 +538,12 @@ setDati(risultatoOrdinato);
                       <span>{p.nome}</span>
                       {p.note ? (
                         <span style={{ marginLeft: 6, fontStyle: "italic" }}>
-                          Ã¢â‚¬â€ Nota: {p.note}
+                          - Nota: {p.note}
                         </span>
                       ) : null}
                       {index !== prodotti.length - 1 && (
                         <span style={{ marginLeft: 12, marginRight: 4 }}>
-                          Ã¢â‚¬Â¢
+                          {" - "}
                         </span>
                       )}
                     </span>
