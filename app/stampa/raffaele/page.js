@@ -3,6 +3,14 @@
 import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
+function normalizzaZona(zona) {
+  const valore = Number(zona);
+
+  return [1, 2, 3, 4].includes(valore)
+    ? valore
+    : null;
+}
+
 function getDataOperativa() {
   const now = new Date();
 
@@ -81,6 +89,7 @@ function getGiorniCalendario(meseIso) {
 
 function StampaRaffaeleContent() {
   const [dati, setDati] = useState({});
+  const [zoneClienti, setZoneClienti] = useState({});
   const [caricamento, setCaricamento] = useState(true);
   const [dataOperativa, setDataOperativa] = useState(getDataOperativa());
   const [meseCalendario, setMeseCalendario] = useState(getDataOperativa().slice(0, 7));
@@ -166,6 +175,7 @@ function StampaRaffaeleContent() {
     });
 
     const risultato = {};
+    const zonePerCliente = {};
 
     (ordini || []).forEach((ordine) => {
       const clienteNome =
@@ -182,6 +192,30 @@ function StampaRaffaeleContent() {
       );
 
       if (righeRaffaele.length > 0) {
+        const zonaOrdine = normalizzaZona(
+          ordine.zona
+        );
+
+        if (
+          !Object.prototype.hasOwnProperty.call(
+            zonePerCliente,
+            clienteNome
+          )
+        ) {
+          zonePerCliente[clienteNome] =
+            zonaOrdine;
+        } else if (
+          zonePerCliente[clienteNome] !==
+          zonaOrdine
+        ) {
+          /*
+           * Se più ordini dello stesso cliente
+           * hanno zone differenti, il gruppo viene
+           * inserito tra gli ordini senza zona.
+           */
+          zonePerCliente[clienteNome] = null;
+        }
+
         if (!risultato[clienteNome]) {
           risultato[clienteNome] = [];
         }
@@ -261,9 +295,73 @@ function StampaRaffaeleContent() {
       })
     );
 
+    setZoneClienti(zonePerCliente);
     setDati(risultatoOrdinato);
     setCaricamento(false);
   }
+
+  const gruppiZone = [
+    {
+      chiave: "1",
+      titolo: "ZONA 1",
+      ordini: [],
+    },
+    {
+      chiave: "2",
+      titolo: "ZONA 2",
+      ordini: [],
+    },
+    {
+      chiave: "3",
+      titolo: "ZONA 3",
+      ordini: [],
+    },
+    {
+      chiave: "4",
+      titolo: "ZONA 4",
+      ordini: [],
+    },
+    {
+      chiave: "senza-zona",
+      titolo: "ORDINI SENZA ZONA",
+      ordini: [],
+    },
+  ];
+
+  const gruppiZoneMap = new Map(
+    gruppiZone.map((gruppo) => [
+      gruppo.chiave,
+      gruppo,
+    ])
+  );
+
+  Object.entries(dati).forEach(
+    ([cliente, prodotti]) => {
+      const zonaCliente = normalizzaZona(
+        zoneClienti[cliente]
+      );
+
+      const chiave =
+        zonaCliente === null
+          ? "senza-zona"
+          : String(zonaCliente);
+
+      const gruppo =
+        gruppiZoneMap.get(chiave);
+
+      if (gruppo) {
+        gruppo.ordini.push([
+          cliente,
+          prodotti,
+        ]);
+      }
+    }
+  );
+
+  const gruppiZoneVisibili =
+    gruppiZone.filter(
+      (gruppo) => gruppo.ordini.length > 0
+    );
 
   function stampaPagina() {
     window.print();
@@ -285,7 +383,38 @@ function StampaRaffaeleContent() {
           margin: 8mm;
         }
 
+        .gruppo-zona-raffaele {
+          margin-bottom: 20px;
+        }
+
+        .titolo-zona-raffaele {
+          margin-bottom: 10px;
+          padding: 8px 10px;
+          border: 2px solid #000000;
+          background: #e5e7eb;
+          color: #000000;
+          font-size: 16px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+
         @media print {
+          .gruppo-zona-raffaele {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+
+          .gruppo-zona-raffaele +
+          .gruppo-zona-raffaele {
+            break-before: page;
+            page-break-before: always;
+          }
+
+          .titolo-zona-raffaele {
+            break-after: avoid;
+            page-break-after: avoid;
+          }
+
           button, .no-print {
             display: none !important;
           }
@@ -497,67 +626,120 @@ function StampaRaffaeleContent() {
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine Raffaele in bozza per la data selezionata.</p>
+          <p>
+            Nessun ordine Raffaele in bozza
+            per la data selezionata.
+          </p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 8,
-              alignItems: "start",
-            }}
-          >
-            {Object.entries(dati).map(([cliente, prodotti]) => (
-              <div
-                key={cliente}
-                style={{
-                  border: "1px solid #000000",
-                  borderRadius: 4,
-                  padding: 6,
-                  backgroundColor: "#ffffff",
-                  breakInside: "avoid",
-                  pageBreakInside: "avoid",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: 12,
-                    textTransform: "uppercase",
-                    borderBottom: "1px solid #000000",
-                    paddingBottom: 4,
-                    marginBottom: 6,
-                  }}
+          <div>
+            {gruppiZoneVisibili.map(
+              (gruppo) => (
+                <section
+                  key={gruppo.chiave}
+                  className="gruppo-zona-raffaele"
                 >
-                  {cliente}
-                </div>
+                  <div
+                    className="titolo-zona-raffaele"
+                  >
+                    {gruppo.titolo} -{" "}
+                    {gruppo.ordini.length}{" "}
+                    {gruppo.ordini.length === 1
+                      ? "ordine"
+                      : "ordini"}
+                  </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {prodotti.map((p, i) => (
-                    <div
-                      key={`${cliente}-${i}`}
-                      style={{
-                        borderBottom:
-                          i !== prodotti.length - 1
-                            ? "1px dotted #cfcfcf"
-                            : "none",
-                        paddingBottom: 4,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {p.quantita} {p.unita} {p.nome}
-                            {p.note ? ` - Nota: ${p.note}` : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(4, 1fr)",
+                      gap: 8,
+                      alignItems: "start",
+                    }}
+                  >
+                    {gruppo.ordini.map(
+                      ([cliente, prodotti]) => (
+                        <div
+                          key={cliente}
+                          style={{
+                            border:
+                              "1px solid #000000",
+                            borderRadius: 4,
+                            padding: 6,
+                            backgroundColor:
+                              "#ffffff",
+                            breakInside: "avoid",
+                            pageBreakInside:
+                              "avoid",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: 12,
+                              textTransform:
+                                "uppercase",
+                              borderBottom:
+                                "1px solid #000000",
+                              paddingBottom: 4,
+                              marginBottom: 6,
+                            }}
+                          >
+                            {cliente}
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection:
+                                "column",
+                              gap: 8,
+                            }}
+                          >
+                            {prodotti.map(
+                              (p, i) => (
+                                <div
+                                  key={
+                                    cliente +
+                                    "-" +
+                                    i
+                                  }
+                                  style={{
+                                    borderBottom:
+                                      i !==
+                                      prodotti.length -
+                                        1
+                                        ? "1px dotted #cfcfcf"
+                                        : "none",
+                                    paddingBottom: 4,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      wordBreak:
+                                        "break-word",
+                                    }}
+                                  >
+                                    {p.quantita}{" "}
+                                    {p.unita}{" "}
+                                    {p.nome}
+                                    {p.note
+                                      ? " - Nota: " +
+                                        p.note
+                                      : ""}
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </section>
+              )
+            )}
           </div>
         )}
       </div>
