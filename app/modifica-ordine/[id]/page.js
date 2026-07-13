@@ -41,6 +41,7 @@ export default function ModificaOrdineTestPage() {
   const [unitaProdotti, setUnitaProdotti] = useState({});
   const [caricamento, setCaricamento] = useState(true);
   const [salvataggio, setSalvataggio] = useState(false);
+  const [dataOperativaOriginale, setDataOperativaOriginale] = useState("");
 
   const [prodottoDaAggiungere, setProdottoDaAggiungere] = useState("");
   const [quantitaNuova, setQuantitaNuova] = useState("");
@@ -167,6 +168,7 @@ export default function ModificaOrdineTestPage() {
       cliente_nome_manuale: ordineData.cliente_nome_manuale || "",
     });
 
+    setDataOperativaOriginale(ordineData.data_operativa || "");
     setRighe(righeFinali);
     setProdotti(prodottiData || []);
     setUnitaProdotti(mappaUnita);
@@ -303,8 +305,28 @@ export default function ModificaOrdineTestPage() {
 
     setSalvataggio(true);
 
+    const dataOperativa = (ordine.data_operativa || "").trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataOperativa)) {
+      alert("Inserisci una data esecuzione valida.");
+      setSalvataggio(false);
+      return;
+    }
+
+    if (dataOperativa !== dataOperativaOriginale) {
+      const confermaSpostamento = confirm(
+        `Stai spostando l'ordine dalla data ${dataOperativaOriginale || "-"} alla data ${dataOperativa}. Confermi?`
+      );
+
+      if (!confermaSpostamento) {
+        setSalvataggio(false);
+        return;
+      }
+    }
+
     const datiOrdineDaAggiornare = {
       note_generali: ordine.note_generali || null,
+      data_operativa: dataOperativa,
     };
 
     if (ordineManuale) {
@@ -525,7 +547,45 @@ export default function ModificaOrdineTestPage() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <strong>Data operativa:</strong> {ordine.data_operativa || "-"}
+            <div
+              style={{
+                fontWeight: "bold",
+                marginBottom: 8,
+                color: "#7dd3fc",
+              }}
+            >
+              Data esecuzione ordine
+            </div>
+
+            <input
+              type="date"
+              value={ordine.data_operativa || ""}
+              onChange={(e) =>
+                aggiornaOrdine("data_operativa", e.target.value)
+              }
+              style={{
+                width: "100%",
+                maxWidth: 320,
+                padding: 12,
+                borderRadius: 10,
+                border: "1px solid #475569",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
+                fontSize: 16,
+                boxSizing: "border-box",
+              }}
+            />
+
+            <div
+              style={{
+                marginTop: 8,
+                color: "#cbd5e1",
+                fontSize: 13,
+              }}
+            >
+              Questa data determina la giornata in cui l'ordine sarà lavorato e
+              visualizzato nelle stampe.
+            </div>
           </div>
 
           <div>
