@@ -34,6 +34,162 @@ function chunkArray(array, size) {
   return risultato;
 }
 
+function normalizzaZona(zona) {
+  const valore = Number(zona);
+
+  return [1, 2, 3, 4].includes(valore)
+    ? valore
+    : null;
+}
+
+function suddividiIdsPerZona(celle) {
+  const gruppi = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    senzaZona: [],
+  };
+
+  celle.forEach((cella) => {
+    const zona = normalizzaZona(cella.zona);
+
+    if (zona === null) {
+      gruppi.senzaZona.push(cella.id);
+      return;
+    }
+
+    gruppi[zona].push(cella.id);
+  });
+
+  return gruppi;
+}
+
+function calcolaPagineZone(gruppi) {
+  const principali = Math.max(
+    Math.ceil(gruppi[1].length / COLONNE_PER_PAGINA),
+    Math.ceil(gruppi[2].length / COLONNE_PER_PAGINA),
+    Math.ceil(gruppi[3].length / COLONNE_PER_PAGINA)
+  );
+
+  const zona4 = Math.ceil(
+    gruppi[4].length / COLONNE_PER_PAGINA
+  );
+
+  const senzaZona = Math.ceil(
+    gruppi.senzaZona.length / COLONNE_PER_PAGINA
+  );
+
+  return {
+    principali,
+    zona4,
+    senzaZona,
+    totali: Math.max(
+      1,
+      principali + zona4 + senzaZona
+    ),
+  };
+}
+
+function creaOrdineAutomaticoPerZone(
+  gruppi,
+  idsVuoti
+) {
+  const pagineZone = calcolaPagineZone(gruppi);
+  const risultato = [];
+  let indiceVuoto = 0;
+
+  function prossimoVuoto() {
+    const id = idsVuoti[indiceVuoto];
+    indiceVuoto += 1;
+    return id;
+  }
+
+  function aggiungiRiga(ids, numeroPagina) {
+    const inizio =
+      numeroPagina * COLONNE_PER_PAGINA;
+
+    for (
+      let indice = 0;
+      indice < COLONNE_PER_PAGINA;
+      indice += 1
+    ) {
+      risultato.push(
+        ids[inizio + indice] || prossimoVuoto()
+      );
+    }
+  }
+
+  function aggiungiRigaVuota() {
+    for (
+      let indice = 0;
+      indice < COLONNE_PER_PAGINA;
+      indice += 1
+    ) {
+      risultato.push(prossimoVuoto());
+    }
+  }
+
+  /*
+   * Pagine principali:
+   * riga superiore Zona 1
+   * riga centrale Zona 2
+   * riga inferiore Zona 3
+   */
+  for (
+    let pagina = 0;
+    pagina < pagineZone.principali;
+    pagina += 1
+  ) {
+    aggiungiRiga(gruppi[1], pagina);
+    aggiungiRiga(gruppi[2], pagina);
+    aggiungiRiga(gruppi[3], pagina);
+  }
+
+  /*
+   * Zona 4: pagina separata.
+   * Si utilizza soltanto la prima riga.
+   */
+  for (
+    let pagina = 0;
+    pagina < pagineZone.zona4;
+    pagina += 1
+  ) {
+    aggiungiRiga(gruppi[4], pagina);
+    aggiungiRigaVuota();
+    aggiungiRigaVuota();
+  }
+
+  /*
+   * Ordini senza zona: blocco finale.
+   */
+  for (
+    let pagina = 0;
+    pagina < pagineZone.senzaZona;
+    pagina += 1
+  ) {
+    aggiungiRiga(gruppi.senzaZona, pagina);
+    aggiungiRigaVuota();
+    aggiungiRigaVuota();
+  }
+
+  /*
+   * Mantiene una pagina vuota nel caso
+   * in cui non esistano celle.
+   */
+  if (risultato.length === 0) {
+    for (
+      let indice = 0;
+      indice < CELLE_PER_PAGINA;
+      indice += 1
+    ) {
+      risultato.push(prossimoVuoto());
+    }
+  }
+
+  return risultato.filter(Boolean);
+}
+
 function formatDataOra(dataString) {
   if (!dataString) return "-";
 
@@ -375,6 +531,7 @@ function CellaVuotaSortable({ cella, onElimina }) {
 
 function StampaTotaleContent() {
   const [dati, setDati] = useState({});
+  const [zoneClienti, setZoneClienti] = useState({});
   const [caricamento, setCaricamento] = useState(true);
   const [ordineCelle, setOrdineCelle] = useState([]);
   const [dataOperativa, setDataOperativa] = useState(getDataOperativa());
@@ -519,12 +676,35 @@ function StampaTotaleContent() {
     });
 
     const risultato = {};
+    const zonePerCliente = {};
 
     (ordini || []).forEach((ordine) => {
       const clienteNome =
         ordine.cliente_nome_manuale ||
         clientiMap[ordine.cliente_id] ||
         "Cliente sconosciuto";
+
+      const zonaOrdine = normalizzaZona(
+        ordine.zona
+      );
+
+      if (
+        !Object.prototype.hasOwnProperty.call(
+          zonePerCliente,
+          clienteNome
+        )
+      ) {
+        zonePerCliente[clienteNome] = zonaOrdine;
+      } else if (
+        zonePerCliente[clienteNome] !== zonaOrdine
+      ) {
+        /*
+         * Se due ordini con lo stesso nome hanno
+         * zone differenti, vengono considerati
+         * senza una zona univoca.
+         */
+        zonePerCliente[clienteNome] = null;
+      }
 
       const righeOrdine = (righe || []).filter(
         (r) => r.ordine_id === ordine.id
@@ -560,6 +740,7 @@ function StampaTotaleContent() {
       )
     );
 
+    setZoneClienti(zonePerCliente);
     setDati(risultatoOrdinato);
     await caricaLayoutSalvato(dataOrdini);
     setCaricamento(false);
@@ -774,10 +955,13 @@ function StampaTotaleContent() {
     window.print();
   }
 
-  const clientiArray = Object.entries(dati).map(([cliente, prodotti]) => ({
-    cliente,
-    prodotti,
-  }));
+  const clientiArray = Object.entries(dati).map(
+    ([cliente, prodotti]) => ({
+      cliente,
+      prodotti,
+      zona: normalizzaZona(zoneClienti[cliente]),
+    })
+  );
 
   const celleOrdini = [];
 
@@ -794,6 +978,7 @@ function StampaTotaleContent() {
         prodotti: [],
         parte: 1,
         totaleParti: 1,
+        zona: blocco.zona,
         vuota: false,
       });
 
@@ -807,6 +992,7 @@ function StampaTotaleContent() {
         prodotti,
         parte: index + 1,
         totaleParti: partiProdotti.length,
+        zona: blocco.zona,
         vuota: false,
       });
     });
@@ -832,10 +1018,22 @@ function StampaTotaleContent() {
         .map((idCliente) => celleOrdiniMap.get(idCliente))
         .filter(Boolean);
 
+      const zoneDellaCella = clienti.map(
+        (cliente) => normalizzaZona(cliente.zona)
+      );
+
+      const zonaComune =
+        zoneDellaCella.length === 2 &&
+        zoneDellaCella[0] !== null &&
+        zoneDellaCella[0] === zoneDellaCella[1]
+          ? zoneDellaCella[0]
+          : null;
+
       return {
         id,
         doppia: true,
         vuota: false,
+        zona: zonaComune,
         clienti,
       };
     })
@@ -853,30 +1051,57 @@ function StampaTotaleContent() {
     ...celleVuoteManualiOggetti,
   ];
 
-  const idsOrdini = celleSenzaRiempimento.map((cella) => cella.id);
-
-  const numeroSlotTotali = Math.max(
-    CELLE_PER_PAGINA,
-    Math.ceil(idsOrdini.length / CELLE_PER_PAGINA) * CELLE_PER_PAGINA
+  const idsOrdini = celleSenzaRiempimento.map(
+    (cella) => cella.id
   );
 
-  const numeroCelleVuote = numeroSlotTotali - idsOrdini.length;
-
-  const celleVuote = Array.from({ length: numeroCelleVuote }).map(
-    (_, index) => ({
-      id: `__vuota__auto_${index}`,
-      vuota: true,
-      manuale: false,
-    })
+  const gruppiZone = suddividiIdsPerZona(
+    celleSenzaRiempimento
   );
+
+  const pagineZone = calcolaPagineZone(
+    gruppiZone
+  );
+
+  const numeroSlotTotali =
+    pagineZone.totali * CELLE_PER_PAGINA;
+
+  const numeroCelleVuote =
+    numeroSlotTotali - idsOrdini.length;
+
+  const celleVuote = Array.from({
+    length: numeroCelleVuote,
+  }).map((_, index) => ({
+    id: `__vuota__auto_${index}`,
+    vuota: true,
+    manuale: false,
+    zona: null,
+  }));
 
   const tutteLeCelleBase = [
     ...celleSenzaRiempimento,
     ...celleVuote,
   ];
 
-  const celleMap = new Map(tutteLeCelleBase.map((cella) => [cella.id, cella]));
-  const idsBase = tutteLeCelleBase.map((cella) => cella.id);
+  const celleMap = new Map(
+    tutteLeCelleBase.map((cella) => [
+      cella.id,
+      cella,
+    ])
+  );
+
+  const idsAutomaticiPerZone =
+    creaOrdineAutomaticoPerZone(
+      gruppiZone,
+      celleVuote.map((cella) => cella.id)
+    );
+
+  /*
+   * idsBase viene utilizzato anche dal drag-and-drop.
+   * In questo modo il primo trascinamento parte
+   * dalla disposizione automatica per zone.
+   */
+  const idsBase = idsAutomaticiPerZone;
 
   const idsOrdinati =
     ordineCelle.length > 0
@@ -895,6 +1120,20 @@ function StampaTotaleContent() {
   const clientiUnibili = celleOrdiniSingole.filter(
     (cella) => cella.totaleParti === 1
   );
+
+  function riorganizzaPerZone() {
+    const conferma = window.confirm(
+      "Riorganizzare la griglia in base alle zone? " +
+      "Gli spostamenti manuali non ancora salvati " +
+      "verranno sostituiti."
+    );
+
+    if (!conferma) {
+      return;
+    }
+
+    setOrdineCelle([...idsAutomaticiPerZone]);
+  }
 
 function gestisciFineDrag(event) {
   const { active, over } = event;
@@ -1217,6 +1456,22 @@ function gestisciFineDrag(event) {
               Unisci clienti
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={riorganizzaPerZone}
+            style={{
+              padding: "8px 14px",
+              border: "none",
+              borderRadius: 6,
+              backgroundColor: "#d97706",
+              color: "#ffffff",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            Riorganizza per zone
+          </button>
 
           <button
             onClick={salvaOrdineStampe}
