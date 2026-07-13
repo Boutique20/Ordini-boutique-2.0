@@ -105,6 +105,7 @@ function bottoneLink(backgroundColor) {
 export default function GestioneOrdiniPage() {
   const [ordini, setOrdini] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
+  const [zonaInSalvataggio, setZonaInSalvataggio] = useState(null);
 
   const [clienteInput, setClienteInput] = useState("");
   const [dataInput, setDataInput] = useState("");
@@ -234,6 +235,47 @@ export default function GestioneOrdiniPage() {
     );
   }
 
+  async function aggiornaZona(ordineId, nuovaZona) {
+    const ordineCorrente = ordini.find(
+      (ordine) => ordine.id === ordineId
+    );
+
+    if (Number(ordineCorrente?.zona) === nuovaZona) {
+      return;
+    }
+
+    setZonaInSalvataggio(ordineId);
+
+    try {
+      const { error } = await supabase
+        .from("ordini")
+        .update({ zona: nuovaZona })
+        .eq("id", ordineId);
+
+      if (error) {
+        throw error;
+      }
+
+      setOrdini((prev) =>
+        prev.map((ordine) =>
+          ordine.id === ordineId
+            ? { ...ordine, zona: nuovaZona }
+            : ordine
+        )
+      );
+    } catch (error) {
+      console.error("Errore aggiornamento zona:", error);
+
+      alert(
+        error?.message ||
+        JSON.stringify(error, null, 2) ||
+        "Errore durante l'aggiornamento della zona."
+      );
+    } finally {
+      setZonaInSalvataggio(null);
+    }
+  }
+
   async function eliminaOrdine(ordineId) {
     const conferma = confirm(
       `Vuoi eliminare davvero l'ordine #${ordineId}? Questa azione non si può annullare.`
@@ -354,6 +396,45 @@ export default function GestioneOrdiniPage() {
                 justifyContent: "flex-end",
               }}
             >
+              {[1, 2, 3, 4].map((zona) => {
+                const zonaAttiva = Number(ordine.zona) === zona;
+                const salvataggioInCorso =
+                  zonaInSalvataggio === ordine.id;
+
+                return (
+                  <button
+                    key={zona}
+                    type="button"
+                    onClick={() => aggiornaZona(ordine.id, zona)}
+                    disabled={salvataggioInCorso || zonaAttiva}
+                    style={{
+                      padding: "8px 11px",
+                      borderRadius: 8,
+                      cursor:
+                        salvataggioInCorso || zonaAttiva
+                          ? "default"
+                          : "pointer",
+                      fontWeight: "bold",
+                      backgroundColor: zonaAttiva
+                        ? "#16a34a"
+                        : "#334155",
+                      color: "#ffffff",
+                      border: zonaAttiva
+                        ? "2px solid #86efac"
+                        : "1px solid #475569",
+                      opacity:
+                        salvataggioInCorso && !zonaAttiva
+                          ? 0.55
+                          : 1,
+                    }}
+                  >
+                    {zonaAttiva
+                      ? "✓ Zona " + zona
+                      : "Zona " + zona}
+                  </button>
+                );
+              })}
+
               <a
                 href={`/modifica-ordine/${ordine.id}`}
                 style={{
@@ -398,6 +479,29 @@ export default function GestioneOrdiniPage() {
 
           <div style={{ marginBottom: 6 }}>
             <strong>Data operativa:</strong> {ordine.data_operativa || "-"}
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <strong>Zona:</strong>{" "}
+            <span
+              style={{
+                display: "inline-block",
+                padding: "4px 8px",
+                borderRadius: 6,
+                fontWeight: "bold",
+                color: "#ffffff",
+                backgroundColor:
+                  ordine.zona === null ||
+                  ordine.zona === undefined
+                    ? "#b45309"
+                    : "#1d4ed8",
+              }}
+            >
+              {ordine.zona === null ||
+              ordine.zona === undefined
+                ? "DA ASSEGNARE"
+                : "ZONA " + ordine.zona}
+            </span>
           </div>
 
           <div style={{ marginBottom: 10 }}>
@@ -696,6 +800,51 @@ export default function GestioneOrdiniPage() {
             Azzera filtri
           </button>
         </div>
+
+        {!caricamento && (
+          <div
+            style={{
+              marginBottom: 22,
+              padding: "13px 15px",
+              borderRadius: 10,
+              border:
+                ordini.filter(
+                  (ordine) =>
+                    ordine.zona === null ||
+                    ordine.zona === undefined
+                ).length > 0
+                  ? "1px solid #f59e0b"
+                  : "1px solid #22c55e",
+              backgroundColor:
+                ordini.filter(
+                  (ordine) =>
+                    ordine.zona === null ||
+                    ordine.zona === undefined
+                ).length > 0
+                  ? "rgba(245,158,11,0.16)"
+                  : "rgba(34,197,94,0.14)",
+              color:
+                ordini.filter(
+                  (ordine) =>
+                    ordine.zona === null ||
+                    ordine.zona === undefined
+                ).length > 0
+                  ? "#fef3c7"
+                  : "#bbf7d0",
+              fontWeight: "bold",
+              fontSize: 16,
+            }}
+          >
+            ORDINI SENZA ZONA:{" "}
+            {
+              ordini.filter(
+                (ordine) =>
+                  ordine.zona === null ||
+                  ordine.zona === undefined
+              ).length
+            }
+          </div>
+        )}
 
         <div style={{ marginBottom: 30 }}>
           <div
