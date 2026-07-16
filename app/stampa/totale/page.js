@@ -767,6 +767,17 @@ function StampaTotaleContent() {
   }
 
   function eliminaCellaVuota(idCella) {
+    const collegataAUnione = Object.values(celleDoppie).some(
+      (gruppo) => gruppo?.idCellaVuota === idCella
+    );
+
+    if (collegataAUnione) {
+      alert(
+        "Questa cella vuota mantiene libera la posizione di un cliente unito. Separa prima i clienti."
+      );
+      return;
+    }
+
     setCelleVuoteManuali((precedenti) =>
       precedenti.filter((id) => id !== idCella)
     );
@@ -870,7 +881,7 @@ function StampaTotaleContent() {
     const cellaB = celleOrdiniMap.get(clienteUnioneB);
 
     if (!cellaA || !cellaB) {
-      alert("Una delle due celle non \u00e8 pi\u00f9 disponibile.");
+      alert("Una delle due celle non è più disponibile.");
       return;
     }
 
@@ -883,12 +894,22 @@ function StampaTotaleContent() {
       .toString(36)
       .slice(2, 8)}`;
 
+    const idCellaVuota = `__vuota__manuale_unione_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
     setCelleDoppie((precedenti) => ({
       ...precedenti,
       [nuovoId]: {
         ids: [clienteUnioneA, clienteUnioneB],
+        idCellaVuota,
       },
     }));
+
+    setCelleVuoteManuali((precedenti) => [
+      ...precedenti,
+      idCellaVuota,
+    ]);
 
     setOrdineCelle((ordinePrecedente) => {
       const ordineAttuale =
@@ -904,11 +925,12 @@ function StampaTotaleContent() {
       }
 
       const primoIndice = Math.min(indiceA, indiceB);
-      const nuovoOrdine = ordineAttuale.filter(
-        (id) => id !== clienteUnioneA && id !== clienteUnioneB
-      );
+      const secondoIndice = Math.max(indiceA, indiceB);
+      const nuovoOrdine = [...ordineAttuale];
 
-      nuovoOrdine.splice(primoIndice, 0, nuovoId);
+      nuovoOrdine[primoIndice] = nuovoId;
+      nuovoOrdine[secondoIndice] = idCellaVuota;
+
       return nuovoOrdine;
     });
 
@@ -923,6 +945,11 @@ function StampaTotaleContent() {
       return;
     }
 
+    const idCellaVuota =
+      typeof gruppo.idCellaVuota === "string"
+        ? gruppo.idCellaVuota
+        : "";
+
     setOrdineCelle((ordinePrecedente) => {
       const ordineAttuale =
         ordinePrecedente.length > 0
@@ -935,13 +962,30 @@ function StampaTotaleContent() {
         return ordinePrecedente;
       }
 
-      const nuovoOrdine = ordineAttuale.filter(
-        (id) => id !== idCellaDoppia
-      );
+      const idClienteA = gruppo.ids[0];
+      const idClienteB = gruppo.ids[1];
+      const nuovoOrdine = [...ordineAttuale];
 
-      nuovoOrdine.splice(indiceDoppia, 0, ...gruppo.ids);
+      nuovoOrdine[indiceDoppia] = idClienteA;
+
+      const indiceVuota = idCellaVuota
+        ? nuovoOrdine.indexOf(idCellaVuota)
+        : -1;
+
+      if (indiceVuota !== -1) {
+        nuovoOrdine[indiceVuota] = idClienteB;
+      } else {
+        nuovoOrdine.splice(indiceDoppia + 1, 0, idClienteB);
+      }
+
       return nuovoOrdine;
     });
+
+    if (idCellaVuota) {
+      setCelleVuoteManuali((precedenti) =>
+        precedenti.filter((id) => id !== idCellaVuota)
+      );
+    }
 
     setCelleDoppie((precedenti) => {
       const aggiornate = { ...precedenti };
