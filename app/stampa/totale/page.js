@@ -310,6 +310,7 @@ function CellaOrdineSortable({ cella }) {
       ref={setNodeRef}
       style={style}
       className="cella-ordine"
+      data-cella-id={cella.id}
       {...attributes}
       {...listeners}
     >
@@ -376,6 +377,7 @@ function CellaDoppiaSortable({ cella, onSepara }) {
       ref={setNodeRef}
       style={style}
       className="cella-ordine cella-doppia"
+      data-cella-id={cella.id}
       {...attributes}
       {...listeners}
     >
@@ -541,6 +543,13 @@ function StampaTotaleContent() {
   const [clienteUnioneB, setClienteUnioneB] = useState("");
   const [celleVuoteManuali, setCelleVuoteManuali] = useState([]);
   const [layoutCaricato, setLayoutCaricato] = useState(false);
+  const [integritaOrigine, setIntegritaOrigine] = useState({
+    numeroOrdini: 0,
+    numeroRighe: 0,
+    ordiniSenzaRighe: [],
+    righeProdottoSconosciuto: [],
+  });
+  const [celleTagliate, setCelleTagliate] = useState([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -595,6 +604,12 @@ function StampaTotaleContent() {
 
   async function caricaDati(dataSelezionata = dataOperativa) {
     setCaricamento(true);
+    setIntegritaOrigine({
+      numeroOrdini: 0,
+      numeroRighe: 0,
+      ordiniSenzaRighe: [],
+      righeProdottoSconosciuto: [],
+    });
 
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
@@ -677,6 +692,8 @@ function StampaTotaleContent() {
 
     const risultato = {};
     const zonePerCliente = {};
+    const ordiniSenzaRighe = [];
+    const righeProdottoSconosciuto = [];
 
     (ordini || []).forEach((ordine) => {
       const clienteNome =
@@ -710,13 +727,32 @@ function StampaTotaleContent() {
         (r) => r.ordine_id === ordine.id
       );
 
+      if (righeOrdine.length === 0) {
+        ordiniSenzaRighe.push({
+          ordineId: ordine.id,
+          cliente: clienteNome,
+        });
+      }
+
       if (righeOrdine.length > 0) {
         if (!risultato[clienteNome]) {
           risultato[clienteNome] = [];
         }
 
         righeOrdine.forEach((r) => {
+          if (!prodottiMap[r.prodotto_id]) {
+            righeProdottoSconosciuto.push({
+              rigaId: r.id,
+              ordineId: ordine.id,
+              cliente: clienteNome,
+              prodottoId: r.prodotto_id,
+            });
+          }
+
           risultato[clienteNome].push({
+            riga_id: r.id,
+            ordine_id: ordine.id,
+            prodotto_id: r.prodotto_id,
             nome: prodottiMap[r.prodotto_id]?.nome || "Prodotto sconosciuto",
             ordine_visualizzazione:
               prodottiMap[r.prodotto_id]?.ordine_visualizzazione ?? 9999,
@@ -739,6 +775,13 @@ function StampaTotaleContent() {
         a[0].localeCompare(b[0], "it")
       )
     );
+
+    setIntegritaOrigine({
+      numeroOrdini: (ordini || []).length,
+      numeroRighe: (righe || []).length,
+      ordiniSenzaRighe,
+      righeProdottoSconosciuto,
+    });
 
     setZoneClienti(zonePerCliente);
     setDati(risultatoOrdinato);
@@ -1047,9 +1090,15 @@ function StampaTotaleContent() {
   );
 
   const idsClientiInCelleDoppie = new Set(
-    Object.values(celleDoppie).flatMap((gruppo) =>
-      Array.isArray(gruppo?.ids) ? gruppo.ids : []
-    )
+    Object.values(celleDoppie).flatMap((gruppo) => {
+      const ids = Array.isArray(gruppo?.ids) ? gruppo.ids : [];
+
+      const unioneValida =
+        ids.length === 2 &&
+        ids.every((idCliente) => celleOrdiniMap.has(idCliente));
+
+      return unioneValida ? ids : [];
+    })
   );
 
   const celleOrdiniSingole = celleOrdini.filter(
@@ -1159,6 +1208,114 @@ function StampaTotaleContent() {
     .map((id) => celleMap.get(id))
     .filter((cella) => Boolean(cella));
 
+  const righeAttese = clientiArray.flatMap((bloccoCliente) =>
+    bloccoCliente.prodotti.map((prodotto) => ({
+      ...prodotto,
+      cliente: bloccoCliente.cliente,
+    }))
+  );
+
+  const righeVisualizzate = celleOrdinate.flatMap((cella) => {
+    if (cella.vuota) {
+      return [];
+    }
+
+    if (cella.doppia) {
+      return cella.clienti.flatMap((cliente) =>
+        cliente.prodotti.map((prodotto) => ({
+          ...prodotto,
+          cliente: cliente.cliente,
+        }))
+      );
+    }
+
+    return cella.prodotti.map((prodotto) => ({
+      ...prodotto,
+      cliente: cella.cliente,
+    }));
+  });
+
+  const conteggioRigheVisualizzate = new Map();
+
+  righeVisualizzate.forEach((riga) => {
+    if (riga.riga_id === null || riga.riga_id === undefined) {
+      return;
+    }
+
+    const idRiga = String(riga.riga_id);
+
+    conteggioRigheVisualizzate.set(
+      idRiga,
+      (conteggioRigheVisualizzate.get(idRiga) || 0) + 1
+    );
+  });
+
+  const righeMancanti = righeAttese.filter((riga) => {
+    if (riga.riga_id === null || riga.riga_id === undefined) {
+      return false;
+    }
+
+    return !conteggioRigheVisualizzate.has(String(riga.riga_id));
+  });
+
+  const righeDuplicate = Array.from(
+    conteggioRigheVisualizzate.entries()
+  )
+    .filter(([, numero]) => numero > 1)
+    .map(([idRiga, numero]) => ({
+      idRiga,
+      numero,
+      riga: righeVisualizzate.find(
+        (elemento) => String(elemento.riga_id) === idRiga
+      ),
+    }));
+
+  const numeroRigheRappresentateUniche = new Set(
+    righeVisualizzate
+      .map((riga) =>
+        riga.riga_id === null || riga.riga_id === undefined
+          ? null
+          : String(riga.riga_id)
+      )
+      .filter(Boolean)
+  ).size;
+
+  const differenzaConteggioOrigine =
+    integritaOrigine.numeroRighe !== righeAttese.length;
+
+  const numeroAnomalieIntegrita =
+    integritaOrigine.ordiniSenzaRighe.length +
+    integritaOrigine.righeProdottoSconosciuto.length +
+    righeMancanti.length +
+    righeDuplicate.length +
+    celleTagliate.length +
+    (differenzaConteggioOrigine ? 1 : 0);
+
+  const celleTagliateDettaglio = celleTagliate.map((idCella) => {
+    const cella = celleMap.get(idCella);
+
+    if (!cella) {
+      return { id: idCella, nome: idCella };
+    }
+
+    if (cella.doppia) {
+      return {
+        id: idCella,
+        nome: cella.clienti
+          .map((cliente) => cliente.cliente)
+          .join(" + "),
+      };
+    }
+
+    return {
+      id: idCella,
+      nome:
+        cella.totaleParti > 1
+          ? `${cella.cliente} - parte ${cella.parte}`
+          : cella.cliente,
+    };
+  });
+
   const pagine = chunkArray(celleOrdinate, CELLE_PER_PAGINA);
 
   const clientiUnibili = celleOrdiniSingole.filter(
@@ -1213,6 +1370,50 @@ function gestisciFineDrag(event) {
     return nuovoOrdine;
   });
 }
+
+  useEffect(() => {
+    if (caricamento) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const elementi = Array.from(
+        document.querySelectorAll("[data-cella-id]")
+      );
+
+      const nuoviIds = [...new Set(
+        elementi
+          .filter((elemento) =>
+            elemento.scrollHeight > elemento.clientHeight + 1
+          )
+          .map((elemento) => elemento.getAttribute("data-cella-id"))
+          .filter(Boolean)
+      )].sort();
+
+      setCelleTagliate((precedenti) => {
+        const vecchiIds = [...precedenti].sort();
+
+        if (
+          vecchiIds.length === nuoviIds.length &&
+          vecchiIds.every((id, index) => id === nuoviIds[index])
+        ) {
+          return precedenti;
+        }
+
+        return nuoviIds;
+      });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    caricamento,
+    dataOperativa,
+    dati,
+    ordineCelle,
+    celleDoppie,
+    celleVuoteManuali,
+  ]);
+
   return (
     <div
       style={{
@@ -1713,6 +1914,137 @@ function gestisciFineDrag(event) {
           Data visualizzata: <strong>{formatDataConsegna(dataOperativa)}</strong>
         </div>
       </div>
+
+      {!caricamento ? (
+        <div
+          className="no-print"
+          style={{
+            marginBottom: 18,
+            padding: 16,
+            borderRadius: 12,
+            border:
+              numeroAnomalieIntegrita === 0
+                ? "2px solid #16a34a"
+                : "2px solid #dc2626",
+            backgroundColor:
+              numeroAnomalieIntegrita === 0
+                ? "#ecfdf5"
+                : "#fef2f2",
+            color: "#111827",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 10,
+            }}
+          >
+            <strong style={{ fontSize: 18 }}>
+              Controllo integrità - {formatDataConsegna(dataOperativa)}
+            </strong>
+
+            <strong
+              style={{
+                color:
+                  numeroAnomalieIntegrita === 0
+                    ? "#15803d"
+                    : "#b91c1c",
+              }}
+            >
+              {numeroAnomalieIntegrita === 0
+                ? "INTEGRITÀ OK"
+                : `${numeroAnomalieIntegrita} ANOMALIE`}
+            </strong>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 8,
+              marginBottom: numeroAnomalieIntegrita > 0 ? 12 : 0,
+            }}
+          >
+            <div>
+              Ordini caricati:{" "}
+              <strong>{integritaOrigine.numeroOrdini}</strong>
+            </div>
+            <div>
+              Righe Supabase:{" "}
+              <strong>{integritaOrigine.numeroRighe}</strong>
+            </div>
+            <div>
+              Righe uniche nella griglia:{" "}
+              <strong>{numeroRigheRappresentateUniche}</strong>
+            </div>
+            <div>
+              Celle con contenuto tagliato:{" "}
+              <strong>{celleTagliate.length}</strong>
+            </div>
+          </div>
+
+          {numeroAnomalieIntegrita > 0 ? (
+            <div
+              style={{
+                borderTop: "1px solid #fecaca",
+                paddingTop: 10,
+                fontSize: 13,
+                lineHeight: 1.55,
+              }}
+            >
+              {integritaOrigine.ordiniSenzaRighe.map((anomalia) => (
+                <div key={`senza-righe-${anomalia.ordineId}`}>
+                  ORDINE SENZA RIGHE: #{anomalia.ordineId} -{" "}
+                  {anomalia.cliente}
+                </div>
+              ))}
+
+              {integritaOrigine.righeProdottoSconosciuto.map(
+                (anomalia) => (
+                  <div key={`prodotto-${anomalia.rigaId}`}>
+                    PRODOTTO NON RICONOSCIUTO: ordine #
+                    {anomalia.ordineId} - {anomalia.cliente} - prodotto ID{" "}
+                    {anomalia.prodottoId}
+                  </div>
+                )
+              )}
+
+              {righeMancanti.map((riga) => (
+                <div key={`mancante-${riga.riga_id}`}>
+                  RIGA ASSENTE DALLA GRIGLIA: ordine #{riga.ordine_id} -{" "}
+                  {riga.cliente} - {riga.nome}
+                </div>
+              ))}
+
+              {righeDuplicate.map((anomalia) => (
+                <div key={`duplicata-${anomalia.idRiga}`}>
+                  RIGA DUPLICATA NELLA GRIGLIA: ID {anomalia.idRiga} -{" "}
+                  {anomalia.riga?.cliente || "cliente non identificato"} -{" "}
+                  presente {anomalia.numero} volte
+                </div>
+              ))}
+
+              {celleTagliateDettaglio.map((cella) => (
+                <div key={`tagliata-${cella.id}`}>
+                  CELLA TROPPO PIENA / CONTENUTO TAGLIATO: {cella.nome}
+                </div>
+              ))}
+
+              {differenzaConteggioOrigine ? (
+                <div>
+                  CONTEGGIO INCOERENTE: Supabase contiene{" "}
+                  {integritaOrigine.numeroRighe} righe, ma la preparazione dati
+                  ne ha elaborate {righeAttese.length}.
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {caricamento ? (
         <p>Caricamento dati...</p>
