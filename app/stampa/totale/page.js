@@ -550,6 +550,7 @@ function StampaTotaleContent() {
     righeProdottoSconosciuto: [],
   });
   const [celleTagliate, setCelleTagliate] = useState([]);
+  const [unioneDaVerificare, setUnioneDaVerificare] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -979,6 +980,11 @@ function StampaTotaleContent() {
 
     setClienteUnioneA("");
     setClienteUnioneB("");
+
+    setUnioneDaVerificare({
+      id: nuovoId,
+      nomi: [cellaA.cliente, cellaB.cliente],
+    });
   }
 
   function separaClienti(idCellaDoppia) {
@@ -1035,6 +1041,10 @@ function StampaTotaleContent() {
       delete aggiornate[idCellaDoppia];
       return aggiornate;
     });
+
+    setUnioneDaVerificare((corrente) =>
+      corrente?.id === idCellaDoppia ? null : corrente
+    );
   }
 
 
@@ -1402,6 +1412,31 @@ function gestisciFineDrag(event) {
 
         return nuoviIds;
       });
+
+      if (unioneDaVerificare) {
+        const idUnione = unioneDaVerificare.id;
+
+        const unionePresente = elementi.some(
+          (elemento) =>
+            elemento.getAttribute("data-cella-id") === idUnione
+        );
+
+        if (!unionePresente) {
+          setUnioneDaVerificare(null);
+        } else if (nuoviIds.includes(idUnione)) {
+          const nomeUnione =
+            unioneDaVerificare.nomi.join(" + ");
+
+          separaClienti(idUnione);
+
+          window.alert(
+            `Unione annullata: ${nomeUnione} non entrano completamente ` +
+            "nella stessa cella. Nessun prodotto è stato nascosto."
+          );
+        } else {
+          setUnioneDaVerificare(null);
+        }
+      }
     }, 120);
 
     return () => window.clearTimeout(timer);
@@ -1412,6 +1447,7 @@ function gestisciFineDrag(event) {
     ordineCelle,
     celleDoppie,
     celleVuoteManuali,
+    unioneDaVerificare,
   ]);
 
   return (
@@ -1490,9 +1526,10 @@ function gestisciFineDrag(event) {
 
         .griglia-stampa {
           flex: 1;
+          min-height: 0;
           display: grid;
           grid-template-columns: repeat(${COLONNE_PER_PAGINA}, 1fr);
-          grid-template-rows: repeat(${RIGHE_PER_PAGINA}, 1fr);
+          grid-template-rows: repeat(${RIGHE_PER_PAGINA}, minmax(0, 1fr));
         }
 
         .cella-ordine,
