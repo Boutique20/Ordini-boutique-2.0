@@ -25,26 +25,68 @@ Tecnologie principali:
 
 ## 2. ULTIMO INTERVENTO FUNZIONALE PUBBLICATO
 
+Data:
+19/08/2026
+
 Commit funzionale pubblicato:
-56e4d62cffabe2039232b3485d6c297d26a3d82c
+8e1b96a75fea41c5316cfa57be30ba786a20c659
 
 Messaggio commit:
-Rende atomico il salvataggio ordine manuale
+Aggiunge storico ordini separato e ottimizzato
 
 File pubblicato:
-app/ordine-manuale/page.js
+app/gestione-ordini/storico/page.js
 
 Hash SHA256 ufficiale:
-875C0AD8324A76E43FD7267C8D147612C78A3EF69A6C85EEC8665FCC929C8FFE
+00AF76D1A1D7CF132476F451E386D99D3DC8ADAB03F7C26F81EA1DF7076E362A
+
+Funzione completata:
+- aggiunta pagina separata /gestione-ordini/storico;
+- pagina in sola lettura;
+- all'apertura carica soltanto il giorno corrente;
+- ricerca manuale per data singola o intervallo;
+- pulsante Ultimi 60 giorni;
+- clienti registrati e ordini manuali gestiti insieme;
+- filtro Clienti registrati;
+- filtro Ordini manuali;
+- ricerca per nome cliente;
+- caricamento ordini paginato lato Supabase per superare il limite di 1000 risultati;
+- query di righe ordine, clienti e prodotti eseguite in parallelo a blocchi;
+- nessuna modifica a tabelle, policy, funzioni SQL o dati Supabase.
+
+Test eseguiti e verificati:
+- intervallo 21/06/2026 - 19/08/2026: 2467 ordini;
+- conteggio Supabase dello stesso intervallo: 2467 ordini;
+- clienti registrati: 448;
+- ordini manuali: 2019;
+- controllo matematico: 448 + 2019 = 2467;
+- giorno 15/08/2026: 68 ordini;
+- ricerca cliente ARAGOSTA verificata;
+- ordini con stato CONSEGNATO presenti nello storico;
+- apertura iniziale sul giorno corrente verificata praticamente istantanea;
+- pulsante Ultimi 60 giorni ancora funzionante e restituisce 2467 ordini;
+- pagina TEST e pagina ufficiale verificate nel browser.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 56e4d62cffabe2039232b3485d6c297d26a3d82c
-- origin/main = 56e4d62cffabe2039232b3485d6c297d26a3d82c
-- GitHub main = 56e4d62cffabe2039232b3485d6c297d26a3d82c
-- il commit contiene esclusivamente app/ordine-manuale/page.js
+- HEAD locale = 8e1b96a75fea41c5316cfa57be30ba786a20c659
+- origin/main = 8e1b96a75fea41c5316cfa57be30ba786a20c659
+- GitHub main = 8e1b96a75fea41c5316cfa57be30ba786a20c659
+- il commit contiene esclusivamente app/gestione-ordini/storico/page.js
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati non eliminati e non inclusi nel commit
+
+Problemi ancora aperti:
+- la pagina principale Gestione Ordini deve ancora essere limitata alla sola data operativa corrente;
+- lo storico presente nella pagina principale deve ancora essere rimosso e sostituito dal collegamento alla nuova pagina separata;
+- la dipendenza UI dagli stati deve essere affrontata separatamente senza rompere le stampe;
+- restano separati gli interventi tecnici e di sicurezza già elencati nella sezione 11.
+
+Prossimo intervento:
+- modificare in TEST la pagina principale Gestione Ordini affinché mostri soltanto gli ordini della giornata operativa corrente;
+- rimuovere dalla pagina principale la sezione storico incorporata;
+- aggiungere il collegamento alla pagina /gestione-ordini/storico;
+- preservare le logiche di zona, modifica ordine, stampe e stato finché non verranno affrontate con interventi separati.
 
 Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
 
@@ -354,8 +396,9 @@ Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordi
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
 Prossimo intervento da confermare:
-- gestione ordini filtrata per data operativa;
-- storico indicativamente di circa 30 giorni senza caricare inutilmente tutto lo storico.
+- pagina principale Gestione Ordini filtrata sulla sola data operativa corrente;
+- rimozione dello storico incorporato dalla pagina principale;
+- collegamento dalla Gestione Ordini alla nuova pagina separata /gestione-ordini/storico.
 
 Interventi funzionali successivi ancora previsti:
 - progressiva rimozione della dipendenza UI dagli stati, senza romperne prima l'uso nelle stampe;
