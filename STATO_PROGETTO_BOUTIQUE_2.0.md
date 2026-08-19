@@ -26,22 +26,22 @@ Tecnologie principali:
 ## 2. ULTIMO INTERVENTO FUNZIONALE PUBBLICATO
 
 Commit funzionale pubblicato:
-3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
+56e4d62cffabe2039232b3485d6c297d26a3d82c
 
 Messaggio commit:
-Rende atomico il salvataggio ordini cliente
+Rende atomico il salvataggio ordine manuale
 
 File pubblicato:
-app/ordine/[slug]/page.js
+app/ordine-manuale/page.js
 
 Hash SHA256 ufficiale:
-0A40C58D025593629A12DC3ABF3963991929BF05B420EA4E7443D698200AEC77
+875C0AD8324A76E43FD7267C8D147612C78A3EF69A6C85EEC8665FCC929C8FFE
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
-- origin/main = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
-- GitHub main = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
-- il commit contiene esclusivamente app/ordine/[slug]/page.js
+- HEAD locale = 56e4d62cffabe2039232b3485d6c297d26a3d82c
+- origin/main = 56e4d62cffabe2039232b3485d6c297d26a3d82c
+- GitHub main = 56e4d62cffabe2039232b3485d6c297d26a3d82c
+- il commit contiene esclusivamente app/ordine-manuale/page.js
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati non eliminati e non inclusi nel commit
@@ -175,7 +175,7 @@ il controllo attuale opera sugli ordini caricati dalla Stampa Totale secondo i f
 
 Stato:
 PAGINA CLIENTE COMPLETATA, TESTATA E PUBBLICATA.
-ORDINE MANUALE ANCORA DA CONVERTIRE ALLA RPC.
+ORDINE MANUALE COMPLETATO, TESTATO E PUBBLICATO.
 
 Problema originariamente verificato:
 le pagine cliente e ordine manuale eseguivano due operazioni separate:
@@ -189,22 +189,28 @@ Soluzione realizzata:
 - creata la funzione PostgreSQL public.crea_ordine_atomico;
 - ordine e righe vengono gestiti nella stessa chiamata RPC;
 - se una riga fallisce, non deve rimanere la testata dell'ordine;
-- la pagina cliente ufficiale utilizza ora supabase.rpc("crea_ordine_atomico", ...).
+- la pagina cliente ufficiale utilizza supabase.rpc("crea_ordine_atomico", ...);
+- la pagina ordine manuale ufficiale utilizza supabase.rpc("crea_ordine_atomico", ...).
 
 Pagina cliente:
 - TEST: app/ordine-data-test/[slug]/page.js
 - ufficiale: app/ordine/[slug]/page.js
-- hash TEST e ufficiale dopo promozione:
+- hash TEST e ufficiale:
   0A40C58D025593629A12DC3ABF3963991929BF05B420EA4E7443D698200AEC77
 - commit pubblicato:
   3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
 
 Ordine manuale:
 - TEST: app/ordine-manuale-test/page.js
-- ufficiale protetto: app/ordine-manuale/page.js
-- hash verificato prima dell'intervento:
+- ufficiale: app/ordine-manuale/page.js
+- hash TEST e ufficiale:
+  875C0AD8324A76E43FD7267C8D147612C78A3EF69A6C85EEC8665FCC929C8FFE
+- commit pubblicato:
+  56e4d62cffabe2039232b3485d6c297d26a3d82c
+- backup ufficiale precedente:
+  backup-ordine-manuale-ufficiale-prima-rpc-atomica-20260819-095940.js
+- hash versione precedente:
   E217932D08055B4E993FEDACFEDED7353B4848ABD5826D34380F6666B67317DE
-- il file ufficiale dell'ordine manuale non è stato ancora modificato per usare la RPC.
 
 ## 8. SUPABASE - RPC SALVATAGGIO ATOMICO
 
@@ -248,17 +254,49 @@ Test browser sulla pagina ufficiale cliente:
 - stato verificato: bozza;
 - ordine e riga di prova successivamente eliminati.
 
+Test browser e database sulla pagina TEST ordine manuale:
+- cliente manuale: TEST RPC MANUALE 19082026 0928;
+- cliente_id verificato: NULL;
+- data_operativa scelta e verificata: 2026-08-21;
+- stato verificato: bozza;
+- zona verificata: NULL;
+- note_generali: NULL, coerente con il test eseguito;
+- ordine creato con id 3298;
+- riga id 16064: SCAMPO 0/5, quantità 1 KG, nota RIGA 1 TEST RPC;
+- riga id 16065: SCAMPO 0/5, quantità 2 KG, nota RIGA 2 TEST RPC;
+- entrambe le righe duplicate appartenevano allo stesso ordine 3298;
+- ordine e righe di prova successivamente eliminati;
+- verifica finale pulizia: ordini_residui = 0, righe_residue = 0.
+
+Dopo la promozione:
+- app/ordine-manuale/page.js e app/ordine-manuale-test/page.js avevano lo stesso SHA256;
+- la route locale ufficiale /ordine-manuale è stata aperta correttamente;
+- non è stato creato un secondo ordine reale dall'ufficiale perché il file ufficiale era identico per hash alla versione TEST già verificata.
+
 Logiche cliente confermate dopo la modifica:
 - il cliente non vede e non seleziona la data;
 - cutoff delle ore 05:00 invariato;
 - il cliente non vede e non seleziona la zona;
 - quantità, KG/PZ e note restano gestiti come prima;
-- Telegram resta dopo il salvataggio riuscito;
+- il blocco Telegram e il reset non sono stati modificati dal diff;
 - grafica e caricamento prodotti invariati.
+
+Logiche ordine manuale confermate:
+- scelta della data operativa preservata;
+- nome cliente manuale preservato;
+- righe duplicate dello stesso prodotto preservate;
+- quantità, KG/PZ e note prodotto preservati;
+- blocco Telegram e reset non modificati dal diff;
+- grafica, calendario e caricamento prodotti non modificati.
+
+Questioni aperte separate:
+- la funzione public.crea_ordine_atomico è stata creata direttamente in Supabase e non risulta ancora versionata nel repository tramite una migrazione SQL;
+- RLS risulta disattivato su public.ordini e public.righe_ordine;
+- i privilegi diretti di anon/authenticated sulle tabelle restano un tema di sicurezza separato: l'uso della RPC nelle pagine applicative garantisce l'atomicità di quei percorsi, ma non impedisce eventuali scritture dirette tramite Data API.
 
 ## 9. FUNZIONI DA NON ALTERARE NEL SALVATAGGIO ATOMICO
 
-La modifica futura non deve cambiare:
+Il salvataggio atomico non deve alterare:
 - cutoff delle ore 05:00;
 - data_operativa;
 - selezione data dell'ordine manuale;
@@ -278,28 +316,35 @@ La modifica futura non deve cambiare:
 - Andrea;
 - Raffaele.
 
-Telegram è presente nel codice ma non deve essere modificato durante l'intervento sul salvataggio atomico.
+Telegram è presente nel codice e non è stato modificato durante l'intervento sul salvataggio atomico.
 
 ## 10. ROLLBACK SALVATAGGIO ATOMICO
 
-La pagina cliente ufficiale utilizza ora public.crea_ordine_atomico.
+Le pagine ufficiali cliente e ordine manuale utilizzano ora public.crea_ordine_atomico.
 
 Per questo motivo NON eliminare la RPC come primo passaggio di rollback.
 
-Procedura corretta di rollback della pagina cliente:
+Procedura corretta:
 1. controllare repository, hash e stato Git;
-2. ripristinare prima esclusivamente un file TEST cliente dalla versione precedente;
+2. ripristinare prima esclusivamente il relativo file TEST dalla versione precedente;
 3. provarlo nel browser;
 4. dopo conferma esplicita copiare il TEST ripristinato sull'ufficiale;
 5. verificare hash, diff e funzionamento;
-6. commit e push separati secondo la procedura ordinaria;
-7. soltanto quando nessun file ufficiale utilizza più crea_ordine_atomico valutare la rimozione della funzione Supabase.
+6. creare commit e push separati secondo la procedura ordinaria;
+7. ripetere la procedura per ogni pagina ufficiale che utilizza la RPC;
+8. soltanto quando nessun file ufficiale utilizza più crea_ordine_atomico valutare la rimozione della funzione Supabase.
 
 Backup ufficiale cliente precedente alla RPC:
 backup-ufficiale-cliente-prima-rpc-atomica-20260816-131533.js
 
-Hash della precedente versione cliente:
+Hash precedente pagina cliente:
 CA9BFD20030635CECBFD8438B7DCE7D961394CD1DB7D191E1FC0BE9B3B250D87
+
+Backup ufficiale ordine manuale precedente alla RPC:
+backup-ordine-manuale-ufficiale-prima-rpc-atomica-20260819-095940.js
+
+Hash precedente ordine manuale:
+E217932D08055B4E993FEDACFEDED7353B4848ABD5826D34380F6666B67317DE
 
 Rollback database, solo dopo aver eliminato tutte le dipendenze applicative dalla RPC:
 DROP FUNCTION IF EXISTS public.crea_ordine_atomico(bigint, text, text, date, jsonb);
@@ -308,18 +353,11 @@ Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordi
 
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
-Prossimo intervento immediato:
-- rendere atomico anche l'ordine manuale;
-- modificare inizialmente esclusivamente app/ordine-manuale-test/page.js;
-- preservare scelta della data operativa;
-- preservare nome cliente manuale;
-- preservare righe duplicate dello stesso prodotto;
-- preservare quantità, KG/PZ, note e Telegram;
-- non modificare app/ordine-manuale/page.js prima del test browser e della conferma esplicita.
-
-Interventi successivi ancora previsti:
+Prossimo intervento da confermare:
 - gestione ordini filtrata per data operativa;
-- storico indicativamente di circa 30 giorni senza caricare inutilmente tutto lo storico;
+- storico indicativamente di circa 30 giorni senza caricare inutilmente tutto lo storico.
+
+Interventi funzionali successivi ancora previsti:
 - progressiva rimozione della dipendenza UI dagli stati, senza romperne prima l'uso nelle stampe;
 - etichette descrittive delle zone mantenendo i valori database numerici;
 - controllo integrità anche per Stampa Andrea;
@@ -327,6 +365,11 @@ Interventi successivi ancora previsti:
 - apprendimento della posizione abituale dei clienti;
 - analisi e classificazione dei numerosi file TEST, backup e script non tracciati;
 - rimozione futura della funzione/API Telegram, solo dopo analisi separata e autorizzazione.
+
+Interventi tecnici e di sicurezza da mantenere separati:
+- versionare nel repository la definizione SQL di public.crea_ordine_atomico con relativa procedura di migrazione e rollback;
+- analizzare RLS e privilegi diretti anon/authenticated su ordini e righe_ordine senza mescolare questa attività con correzioni funzionali;
+- verificare separatamente la protezione di accesso alla route /ordine-manuale.
 
 Etichette zone già definite per un intervento futuro:
 - Zona 1 - ALTAMURA/GIOVINAZZO
