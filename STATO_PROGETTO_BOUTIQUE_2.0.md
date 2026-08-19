@@ -29,64 +29,65 @@ Data:
 19/08/2026
 
 Commit funzionale pubblicato:
-8e1b96a75fea41c5316cfa57be30ba786a20c659
+72b15eeba4e0e90672841f99600378bf42ae42e1
 
 Messaggio commit:
-Aggiunge storico ordini separato e ottimizzato
+Ottimizza Gestione Ordini per data operativa
 
 File pubblicato:
-app/gestione-ordini/storico/page.js
+app/gestione-ordini/page.js
 
 Hash SHA256 ufficiale:
-00AF76D1A1D7CF132476F451E386D99D3DC8ADAB03F7C26F81EA1DF7076E362A
+A4A80D5F7643A2021ABE442BD8E2D3E7EBE7C7A1C2B9E2F81205CC3877C5217E
 
 Funzione completata:
-- aggiunta pagina separata /gestione-ordini/storico;
-- pagina in sola lettura;
-- all'apertura carica soltanto il giorno corrente;
-- ricerca manuale per data singola o intervallo;
-- pulsante Ultimi 60 giorni;
-- clienti registrati e ordini manuali gestiti insieme;
-- filtro Clienti registrati;
-- filtro Ordini manuali;
-- ricerca per nome cliente;
-- caricamento ordini paginato lato Supabase per superare il limite di 1000 risultati;
-- query di righe ordine, clienti e prodotti eseguite in parallelo a blocchi;
-- nessuna modifica a tabelle, policy, funzioni SQL o dati Supabase.
+- la pagina principale Gestione Ordini carica all'apertura soltanto gli ordini della data operativa restituita dall'helper getDataOperativaOggi già esistente;
+- il filtro viene applicato direttamente alla query Supabase su data_operativa, evitando il caricamento dell'intero storico;
+- gli ordini con stato CONSEGNATO non vengono più esclusi dalla query della giornata visualizzata;
+- il calendario è stato mantenuto nella pagina principale come scorciatoia per consultare rapidamente una singola data;
+- scegliendo una data e premendo Cerca viene caricata da Supabase soltanto la data richiesta;
+- il pulsante Aggiorna mantiene la data attualmente visualizzata;
+- Azzera filtri ritorna alla giornata operativa corrente;
+- rimossi il calcolo e la visualizzazione dello storico incorporato nella pagina principale;
+- aggiunto il collegamento alla pagina separata /gestione-ordini/storico;
+- preservati filtro cliente e filtro stato;
+- preservate assegnazione zona, modifica ordine, eliminazione ordine, righe prodotto, stampe e pulsanti stato;
+- nessuna modifica a tabelle, colonne, policy, funzioni SQL o dati Supabase.
 
 Test eseguiti e verificati:
-- intervallo 21/06/2026 - 19/08/2026: 2467 ordini;
-- conteggio Supabase dello stesso intervallo: 2467 ordini;
-- clienti registrati: 448;
-- ordini manuali: 2019;
-- controllo matematico: 448 + 2019 = 2467;
-- giorno 15/08/2026: 68 ordini;
-- ricerca cliente ARAGOSTA verificata;
-- ordini con stato CONSEGNATO presenti nello storico;
-- apertura iniziale sul giorno corrente verificata praticamente istantanea;
-- pulsante Ultimi 60 giorni ancora funzionante e restituisce 2467 ordini;
-- pagina TEST e pagina ufficiale verificate nel browser.
+- pagina TEST app/gestione-ordini-data-test/page.js verificata nel browser;
+- apertura sulla giornata operativa corrente verificata;
+- calendario presente e funzionante;
+- caricamento di una data precedente tramite calendario e pulsante Cerca verificato;
+- presenza degli ordini CONSEGNATO della data selezionata verificata;
+- pulsante Aggiorna verificato mantenendo la data selezionata;
+- Azzera filtri verificato con ritorno alla giornata operativa corrente;
+- vecchia sezione Storico ordini in fondo alla pagina assente;
+- nuovo pulsante Storico ordini verificato verso /gestione-ordini/storico;
+- TEST e ufficiale verificati identici dopo la promozione;
+- SHA256 finale TEST e ufficiale: A4A80D5F7643A2021ABE442BD8E2D3E7EBE7C7A1C2B9E2F81205CC3877C5217E.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 8e1b96a75fea41c5316cfa57be30ba786a20c659
-- origin/main = 8e1b96a75fea41c5316cfa57be30ba786a20c659
-- GitHub main = 8e1b96a75fea41c5316cfa57be30ba786a20c659
-- il commit contiene esclusivamente app/gestione-ordini/storico/page.js
+- HEAD locale = 72b15eeba4e0e90672841f99600378bf42ae42e1
+- origin/main = 72b15eeba4e0e90672841f99600378bf42ae42e1
+- GitHub main = 72b15eeba4e0e90672841f99600378bf42ae42e1
+- il commit contiene esclusivamente app/gestione-ordini/page.js
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati non eliminati e non inclusi nel commit
 
 Problemi ancora aperti:
-- la pagina principale Gestione Ordini deve ancora essere limitata alla sola data operativa corrente;
-- lo storico presente nella pagina principale deve ancora essere rimosso e sostituito dal collegamento alla nuova pagina separata;
-- la dipendenza UI dagli stati deve essere affrontata separatamente senza rompere le stampe;
-- restano separati gli interventi tecnici e di sicurezza già elencati nella sezione 11.
+- i quattro pulsanti di azione BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO sono ancora presenti nella pagina Gestione Ordini e devono essere affrontati con un intervento separato;
+- il campo stato e le logiche database non possono essere rimossi insieme ai pulsanti perché le pagine di stampa dipendono ancora dallo stato, in particolare dal filtro stato = bozza;
+- la RPC crea_ordine_atomico è presente in Supabase ma non è ancora versionata nel repository come migrazione SQL;
+- RLS resta disabilitato su ordini e righe_ordine e gli accessi diretti anon devono essere affrontati con un intervento di sicurezza separato;
+- la route /ordine-manuale resta fuori dalla protezione middleware e deve essere affrontata separatamente.
 
 Prossimo intervento:
-- modificare in TEST la pagina principale Gestione Ordini affinché mostri soltanto gli ordini della giornata operativa corrente;
-- rimuovere dalla pagina principale la sezione storico incorporata;
-- aggiungere il collegamento alla pagina /gestione-ordini/storico;
-- preservare le logiche di zona, modifica ordine, stampe e stato finché non verranno affrontate con interventi separati.
+- eseguire un audit esclusivamente di lettura dei quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO e della funzione aggiornaStato nella pagina Gestione Ordini;
+- se l'audit conferma l'assenza di dipendenze UI necessarie, rimuovere in TEST esclusivamente i quattro pulsanti di cambio stato;
+- mantenere invariati il valore stato nel database, la visualizzazione dello stato attuale e il filtro stato;
+- non modificare in questa fase Stampa Totale, Stampa Andrea, Stampa Raffaele, Supabase o schema database.
 
 Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
 
@@ -396,9 +397,10 @@ Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordi
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
 Prossimo intervento da confermare:
-- pagina principale Gestione Ordini filtrata sulla sola data operativa corrente;
-- rimozione dello storico incorporato dalla pagina principale;
-- collegamento dalla Gestione Ordini alla nuova pagina separata /gestione-ordini/storico.
+- audit esclusivamente di lettura dei quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO e della funzione aggiornaStato nella pagina Gestione Ordini;
+- eventuale rimozione in TEST esclusivamente dei quattro pulsanti di cambio stato;
+- mantenimento del campo stato nel database e delle dipendenze usate dalle stampe;
+- nessuna modifica a Supabase, schema database o pagine di stampa nello stesso intervento.
 
 Interventi funzionali successivi ancora previsti:
 - progressiva rimozione della dipendenza UI dagli stati, senza romperne prima l'uso nelle stampe;
