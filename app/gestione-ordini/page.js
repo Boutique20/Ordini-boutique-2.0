@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -119,13 +119,18 @@ export default function GestioneOrdiniPage() {
     caricaOrdini();
   }, []);
 
-  async function caricaOrdini() {
+  async function caricaOrdini(dataOperativaRichiesta = "") {
     setCaricamento(true);
+
+    const dataDaCaricare =
+      typeof dataOperativaRichiesta === "string" && dataOperativaRichiesta
+        ? dataOperativaRichiesta
+        : filtroData || getDataOperativaOggi();
 
     const { data: ordiniData, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .neq("stato", "consegnato")
+      .eq("data_operativa", dataDaCaricare)
       .order("id", { ascending: false });
 
     if (ordiniError) {
@@ -313,9 +318,13 @@ export default function GestioneOrdiniPage() {
   }
 
   function applicaFiltri() {
+    const dataDaCaricare = dataInput || getDataOperativaOggi();
+
     setFiltroCliente(clienteInput);
     setFiltroData(dataInput);
     setFiltroStato(statoInput);
+
+    caricaOrdini(dataDaCaricare);
   }
 
   function azzeraFiltri() {
@@ -325,10 +334,12 @@ export default function GestioneOrdiniPage() {
     setFiltroCliente("");
     setFiltroData("");
     setFiltroStato("");
+
+    caricaOrdini(getDataOperativaOggi());
   }
 
   const dataOperativaOggi = getDataOperativaOggi();
-  const dataRiferimento = filtroData || dataInput || dataOperativaOggi;
+  const dataRiferimento = filtroData || dataOperativaOggi;
 
   const ordiniFiltrati = useMemo(() => {
     return ordini.filter((o) => {
@@ -349,9 +360,6 @@ export default function GestioneOrdiniPage() {
     return ordiniFiltrati.filter((o) => o.data_operativa === dataRiferimento);
   }, [ordiniFiltrati, dataRiferimento]);
 
-  const storicoOrdini = useMemo(() => {
-    return ordiniFiltrati.filter((o) => o.data_operativa !== dataRiferimento);
-  }, [ordiniFiltrati, dataRiferimento]);
 
   function renderOrdine(ordine) {
     const stileCard = getStileCard(ordine.stato);
@@ -671,6 +679,13 @@ export default function GestioneOrdiniPage() {
               Stampa Totale
             </a>
 
+            <a
+              href="/gestione-ordini/storico"
+              style={bottoneLink("#64748b")}
+            >
+              Storico ordini
+            </a>
+
             <button
               onClick={caricaOrdini}
               style={{
@@ -867,24 +882,6 @@ export default function GestioneOrdiniPage() {
           )}
         </div>
 
-        <div style={{ marginTop: 40 }}>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: "bold",
-              color: "#94a3b8",
-              marginBottom: 14,
-            }}
-          >
-            Storico ordini
-          </div>
-
-          {caricamento ? null : storicoOrdini.length === 0 ? (
-            <p>Nessun ordine storico.</p>
-          ) : (
-            storicoOrdini.map(renderOrdine)
-          )}
-        </div>
       </div>
     </div>
   );
