@@ -510,39 +510,27 @@ export default function OrdineClientePage() {
 
     setInvioInCorso(true);
 
-    const { data: ordine, error: ordineError } = await supabase
-      .from("ordini")
-      .insert({
-        cliente_id: cliente.id,
-        note_generali: note || null,
-        stato: "bozza",
-        data_operativa: dataOperativa,
-      })
-      .select()
-      .single();
-
-    if (ordineError) {
-      console.error("Errore ordine:", ordineError);
-      alert(JSON.stringify(ordineError, null, 2));
-      setInvioInCorso(false);
-      return;
-    }
-
     const righeFinali = riepilogoOrdine.map((r) => ({
-      ordine_id: ordine.id,
       prodotto_id: r.id,
       quantita: r.quantita,
       unita: r.unita,
       note: r.note || null,
     }));
 
-    const { error: righeError } = await supabase
-      .from("righe_ordine")
-      .insert(righeFinali);
+    const { error: ordineError } = await supabase.rpc(
+      "crea_ordine_atomico",
+      {
+        p_cliente_id: cliente.id,
+        p_cliente_nome_manuale: null,
+        p_note_generali: note || null,
+        p_data_operativa: dataOperativa,
+        p_righe: righeFinali,
+      }
+    );
 
-    if (righeError) {
-      console.error("Errore righe ordine:", righeError);
-      alert(JSON.stringify(righeError, null, 2));
+    if (ordineError) {
+      console.error("Errore ordine:", ordineError);
+      alert(JSON.stringify(ordineError, null, 2));
       setInvioInCorso(false);
       return;
     }
