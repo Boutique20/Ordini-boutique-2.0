@@ -1,6 +1,6 @@
 # STATO PROGETTO BOUTIQUE 2.0
 
-Ultimo aggiornamento: 16/08/2026
+Ultimo aggiornamento: 19/08/2026
 
 ## 1. PROGETTO
 
@@ -23,20 +23,30 @@ Tecnologie principali:
 - Vercel
 - PowerShell su Windows
 
-## 2. STATO GIT ATTUALE
+## 2. ULTIMO INTERVENTO FUNZIONALE PUBBLICATO
 
-Ultimo commit pubblicato:
-b9a261cff1f2f79b4f32a66c92be84feb0475583
+Commit funzionale pubblicato:
+3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
 
 Messaggio commit:
-Corregge altezza griglia e unioni sicure Stampa Totale
+Rende atomico il salvataggio ordini cliente
+
+File pubblicato:
+app/ordine/[slug]/page.js
+
+Hash SHA256 ufficiale:
+0A40C58D025593629A12DC3ABF3963991929BF05B420EA4E7443D698200AEC77
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = b9a261cff1f2f79b4f32a66c92be84feb0475583
-- origin/main = b9a261cff1f2f79b4f32a66c92be84feb0475583
-- GitHub main = b9a261cff1f2f79b4f32a66c92be84feb0475583
+- HEAD locale = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
+- origin/main = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
+- GitHub main = 3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
+- il commit contiene esclusivamente app/ordine/[slug]/page.js
 - nessuna modifica tracciata residua
-- file TEST, backup e script non tracciati non eliminati e non inclusi nei commit
+- staging vuoto
+- file TEST, backup e script non tracciati non eliminati e non inclusi nel commit
+
+Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
 
 ## 3. REGOLE OPERATIVE OBBLIGATORIE
 
@@ -161,107 +171,90 @@ Sono già presenti protezioni per:
 Nota:
 il controllo attuale opera sugli ordini caricati dalla Stampa Totale secondo i filtri esistenti.
 
-## 7. PROSSIMO INTERVENTO - SALVATAGGIO ATOMICO ORDINI
+## 7. SALVATAGGIO ATOMICO ORDINI - STATO ATTUALE
 
 Stato:
-ANALISI IN CORSO.
-NESSUNA MODIFICA DATABASE ANCORA ESEGUITA.
+PAGINA CLIENTE COMPLETATA, TESTATA E PUBBLICATA.
+ORDINE MANUALE ANCORA DA CONVERTIRE ALLA RPC.
 
-Problema verificato:
-le pagine cliente e ordine manuale eseguono attualmente due operazioni separate:
+Problema originariamente verificato:
+le pagine cliente e ordine manuale eseguivano due operazioni separate:
 
 1. INSERT nella tabella ordini;
 2. INSERT successivo nella tabella righe_ordine.
 
-Se il secondo INSERT fallisce dopo il primo, può rimanere un ordine incompleto.
+In caso di errore sul secondo INSERT poteva rimanere una testata ordine senza tutte le relative righe.
 
-File ufficiali protetti:
-- app/ordine/[slug]/page.js
-- app/ordine-manuale/page.js
+Soluzione realizzata:
+- creata la funzione PostgreSQL public.crea_ordine_atomico;
+- ordine e righe vengono gestiti nella stessa chiamata RPC;
+- se una riga fallisce, non deve rimanere la testata dell'ordine;
+- la pagina cliente ufficiale utilizza ora supabase.rpc("crea_ordine_atomico", ...).
 
-File TEST individuati e verificati:
-- app/ordine-data-test/[slug]/page.js
-- app/ordine-manuale-test/page.js
+Pagina cliente:
+- TEST: app/ordine-data-test/[slug]/page.js
+- ufficiale: app/ordine/[slug]/page.js
+- hash TEST e ufficiale dopo promozione:
+  0A40C58D025593629A12DC3ABF3963991929BF05B420EA4E7443D698200AEC77
+- commit pubblicato:
+  3a2e533bfb77f483158f8eb1b6a5ed711eded3e4
 
-Hash verificati il 16/08/2026:
+Ordine manuale:
+- TEST: app/ordine-manuale-test/page.js
+- ufficiale protetto: app/ordine-manuale/page.js
+- hash verificato prima dell'intervento:
+  E217932D08055B4E993FEDACFEDED7353B4848ABD5826D34380F6666B67317DE
+- il file ufficiale dell'ordine manuale non è stato ancora modificato per usare la RPC.
 
-Cliente ufficiale:
-CA9BFD20030635CECBFD8438B7DCE7D961394CD1DB7D191E1FC0BE9B3B250D87
+## 8. SUPABASE - RPC SALVATAGGIO ATOMICO
 
-Cliente TEST:
-CA9BFD20030635CECBFD8438B7DCE7D961394CD1DB7D191E1FC0BE9B3B250D87
+Funzione creata:
+public.crea_ordine_atomico(bigint, text, text, date, jsonb)
 
-Manuale ufficiale:
-E217932D08055B4E993FEDACFEDED7353B4848ABD5826D34380F6666B67317DE
+Caratteristiche verificate:
+- ritorno bigint;
+- SECURITY INVOKER;
+- EXECUTE consentito a anon;
+- EXECUTE consentito a authenticated;
+- nessuna modifica a tabelle, colonne, foreign key, RLS o policy;
+- nessun ID viene passato manualmente alle colonne GENERATED ALWAYS AS IDENTITY.
 
-Manuale TEST:
-E217932D08055B4E993FEDACFEDED7353B4848ABD5826D34380F6666B67317DE
+Test di atomicità eseguito:
+- è stato usato intenzionalmente un prodotto inesistente;
+- PostgreSQL ha generato foreign_key_violation;
+- SQLSTATE rilevato: 23503;
+- evento rilevato: ERRORE_FK_ATTESO;
+- ordini residui dopo il fallimento: 0;
+- righe residue dopo il fallimento: 0;
+- risultato: OK - ATOMICITA CONFERMATA.
 
-I rispettivi TEST erano identici ai rispettivi ufficiali al momento del controllo.
+Test browser sulla pagina TEST cliente:
+- cliente Bolina;
+- prodotto SCAMPO 0/5;
+- quantità 1 KG;
+- ordine creato con id 3158;
+- riga creata con id 15464;
+- data_operativa verificata: 2026-08-17;
+- stato verificato: bozza;
+- ordine e riga di prova successivamente eliminati.
 
-Nei quattro file non risultavano chiamate .rpc().
+Test browser sulla pagina ufficiale cliente:
+- cliente Bolina;
+- prodotto SCAMPO 0/5;
+- quantità 1 KG;
+- ordine creato con id 3159;
+- riga creata con id 15465;
+- data_operativa verificata: 2026-08-17;
+- stato verificato: bozza;
+- ordine e riga di prova successivamente eliminati.
 
-## 8. ANALISI SUPABASE PER SALVATAGGIO ATOMICO
-
-Analisi eseguita esclusivamente tramite SELECT.
-
-Tabelle coinvolte:
-- public.ordini
-- public.righe_ordine
-
-Informazioni verificate:
-- struttura delle colonne;
-- primary key;
-- foreign key;
-- indici;
-- RLS;
-- policy;
-- trigger;
-- funzioni schema public;
-- privilegi di anon e authenticated;
-- generazione degli ID.
-
-Vincoli rilevanti:
-- righe_ordine.ordine_id è collegato a ordini.id;
-- righe_ordine.prodotto_id è collegato a prodotti_v2.id.
-
-RLS:
-- disattivato su ordini;
-- disattivato su righe_ordine.
-
-Policy:
-- nessuna policy RLS rilevata sulle due tabelle.
-
-Trigger:
-- nessun trigger rilevato sulle due tabelle.
-
-Funzioni public:
-- nessuna funzione preesistente rilevata durante il controllo effettuato.
-
-ID:
-ordini.id:
-- bigint
-- GENERATED ALWAYS AS IDENTITY
-- sequenza public.ordini_id_seq
-
-righe_ordine.id:
-- bigint
-- GENERATED ALWAYS AS IDENTITY
-- sequenza public.righe_ordine_id_seq
-
-I ruoli anon e authenticated risultano avere USAGE sulle sequenze necessarie.
-
-Soluzione prevista:
-creare una funzione PostgreSQL transazionale, indicativamente denominata
-crea_ordine_atomico,
-richiamata tramite supabase.rpc().
-
-Obiettivo:
-- ordine e tutte le righe vengono salvati insieme;
-- se una parte fallisce, l'intera operazione fallisce;
-- non deve restare un ordine parziale.
-
-La funzione non è ancora stata creata.
+Logiche cliente confermate dopo la modifica:
+- il cliente non vede e non seleziona la data;
+- cutoff delle ore 05:00 invariato;
+- il cliente non vede e non seleziona la zona;
+- quantità, KG/PZ e note restano gestiti come prima;
+- Telegram resta dopo il salvataggio riuscito;
+- grafica e caricamento prodotti invariati.
 
 ## 9. FUNZIONI DA NON ALTERARE NEL SALVATAGGIO ATOMICO
 
@@ -287,24 +280,44 @@ La modifica futura non deve cambiare:
 
 Telegram è presente nel codice ma non deve essere modificato durante l'intervento sul salvataggio atomico.
 
-## 10. ROLLBACK PREVISTO PER IL SALVATAGGIO ATOMICO
+## 10. ROLLBACK SALVATAGGIO ATOMICO
 
-Prima di qualsiasi modifica database dovranno essere preparati:
-- SQL di creazione della funzione;
-- SQL esatto di rollback;
-- verifica funzione assente prima della creazione;
-- controllo privilegi EXECUTE;
-- prova controllata.
+La pagina cliente ufficiale utilizza ora public.crea_ordine_atomico.
 
-Il rollback previsto comprende:
-- eliminazione esclusivamente della nuova funzione RPC;
-- ripristino dei file TEST alle versioni precedenti;
-- nessuna modifica strutturale alle tabelle ordini e righe_ordine.
+Per questo motivo NON eliminare la RPC come primo passaggio di rollback.
+
+Procedura corretta di rollback della pagina cliente:
+1. controllare repository, hash e stato Git;
+2. ripristinare prima esclusivamente un file TEST cliente dalla versione precedente;
+3. provarlo nel browser;
+4. dopo conferma esplicita copiare il TEST ripristinato sull'ufficiale;
+5. verificare hash, diff e funzionamento;
+6. commit e push separati secondo la procedura ordinaria;
+7. soltanto quando nessun file ufficiale utilizza più crea_ordine_atomico valutare la rimozione della funzione Supabase.
+
+Backup ufficiale cliente precedente alla RPC:
+backup-ufficiale-cliente-prima-rpc-atomica-20260816-131533.js
+
+Hash della precedente versione cliente:
+CA9BFD20030635CECBFD8438B7DCE7D961394CD1DB7D191E1FC0BE9B3B250D87
+
+Rollback database, solo dopo aver eliminato tutte le dipendenze applicative dalla RPC:
+DROP FUNCTION IF EXISTS public.crea_ordine_atomico(bigint, text, text, date, jsonb);
+
+Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordine da ripristinare.
 
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
-Dopo il salvataggio atomico, tra gli interventi ancora previsti:
+Prossimo intervento immediato:
+- rendere atomico anche l'ordine manuale;
+- modificare inizialmente esclusivamente app/ordine-manuale-test/page.js;
+- preservare scelta della data operativa;
+- preservare nome cliente manuale;
+- preservare righe duplicate dello stesso prodotto;
+- preservare quantità, KG/PZ, note e Telegram;
+- non modificare app/ordine-manuale/page.js prima del test browser e della conferma esplicita.
 
+Interventi successivi ancora previsti:
 - gestione ordini filtrata per data operativa;
 - storico indicativamente di circa 30 giorni senza caricare inutilmente tutto lo storico;
 - progressiva rimozione della dipendenza UI dagli stati, senza romperne prima l'uso nelle stampe;
