@@ -29,71 +29,66 @@ Data:
 21/08/2026
 
 Commit funzionale pubblicato:
-86d6676b737bf65c33273cba821ad9d9a0a8bb0d
+5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
 
 Messaggio commit:
-Rimuove filtro stato dalle stampe
+Rimuove pulsanti stato da Gestione Ordini
 
-File pubblicati:
-- app/stampa/totale/page.js
-- app/stampa/andrea/page.js
-- app/stampa/raffaele/page.js
+File pubblicato:
+app/gestione-ordini/page.js
 
-Hash SHA256 ufficiali:
-- Stampa Totale:
-  828A43280A58DC1CC1A99A27075D52CA52D35D63EFAD6B556511E1FDB9D29084
-- Stampa Andrea:
-  98EAF5CB48786E172140DFC94AFE625C50A5E90B6ECFC34741D1FD69FA9E87BB
-- Stampa Raffaele:
-  13D0973C7FD977BC30BBD5301F61742BFAB599874C6BEF6E5339C78B58E06194
+Hash SHA256 ufficiale:
+721D548B4240D5DEBDF541C97BED5DF05E0D1A1173F5108940AB30E52828FB44
 
 Funzione completata:
-- Stampa Totale, Stampa Andrea e Stampa Raffaele caricano ora tutti gli ordini della data_operativa selezionata indipendentemente dal valore del campo stato;
-- rimosso esclusivamente dalle tre query il filtro .eq("stato", "bozza");
-- mantenuto invariato il filtro .eq("data_operativa", dataSelezionata);
-- mantenuto invariato l'ordinamento crescente per id;
-- aggiornate esclusivamente le diciture che indicavano erroneamente "ordini in bozza";
-- nessuna modifica alla logica di assegnazione zone;
-- nessuna modifica a drag-and-drop, celle vuote, unioni, layout salvato o persistenza Supabase della Stampa Totale;
-- nessuna modifica all'ordine Andrea/Raffaele derivato dalla Stampa Totale;
-- nessuna modifica alla separazione per zone della Stampa Raffaele;
-- nessuna modifica al campo stato nel database;
+- rimossi dalla pagina Gestione Ordini i quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
+- rimossa la funzione aggiornaStato, dopo audit che ha verificato che era utilizzata esclusivamente dai quattro pulsanti rimossi;
+- rimossa l'unica scrittura diretta del campo stato presente nei file tracciati dell'app tramite aggiornaStato;
+- rimosso il riquadro "Regola operativa stati", ormai non coerente con il comportamento delle stampe;
+- mantenuta invariata la visualizzazione "Stato attuale" nelle schede ordine;
+- mantenuti invariati getColoreStato e getStileCard e quindi i colori associati allo stato;
+- mantenuto invariato il filtro stato con Tutti gli stati / BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
+- mantenuto invariato il campo stato nel database;
+- mantenuti invariati assegnazione Zona 1-4, modifica ordine, eliminazione ordine, data operativa, filtri cliente/data, storico e righe prodotto;
+- nessuna modifica a Stampa Totale, Stampa Andrea o Stampa Raffaele;
 - nessuna modifica a tabelle, colonne, policy, funzioni SQL o dati Supabase.
 
 Test eseguiti e verificati:
-- creati TEST dedicati partendo esattamente dai tre ufficiali;
-- Stampa Totale TEST verificata sulla data 20/08/2026;
-- verificata la presenza dell'ordine ILSA anche con stato diverso da BOZZA;
-- verificata in anteprima di stampa la dicitura "STAMPA TOTALE - ORDINI DELLA DATA";
-- Stampa Andrea TEST verificata con prodotto Andrea appartenente a un ordine non BOZZA;
-- Stampa Raffaele TEST verificata con ordine non BOZZA;
-- dopo la promozione, ciascun ufficiale è stato verificato identico per hash al relativo TEST;
-- git diff --check verificato senza errori;
-- commit verificato contenente esclusivamente i tre file ufficiali previsti.
+- audit esclusivamente di lettura eseguito su app/gestione-ordini/page.js;
+- verificato che aggiornaStato aveva una sola chiamata, proveniente dal blocco dei quattro pulsanti stato;
+- verificato che .update({ stato: nuovoStato }) era l'unica scrittura diretta del campo stato nei file tracciati dell'app;
+- verificato che Stampa Totale, Andrea e Raffaele non contengono più filtri .eq("stato", ...);
+- creato TEST dedicato app/gestione-ordini-stato-test/page.js partendo esattamente dall'ufficiale;
+- diff TEST verificato: 0 aggiunte e 71 eliminazioni;
+- pagina TEST caricata correttamente nel browser locale;
+- verificata l'assenza dei quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
+- verificata l'assenza del riquadro "Regola operativa stati";
+- verificata la permanenza di Stato attuale, pulsanti Zona 1-4, Modifica ordine, Elimina ordine e filtro stato;
+- verificato nel browser il filtro BOZZA e il ritorno a Tutti gli stati;
+- TEST e ufficiale verificati identici dopo la promozione;
+- SHA256 finale TEST e ufficiale: 721D548B4240D5DEBDF541C97BED5DF05E0D1A1173F5108940AB30E52828FB44;
+- commit verificato contenente esclusivamente app/gestione-ordini/page.js.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 86d6676b737bf65c33273cba821ad9d9a0a8bb0d
-- origin/main = 86d6676b737bf65c33273cba821ad9d9a0a8bb0d
-- GitHub main = 86d6676b737bf65c33273cba821ad9d9a0a8bb0d
+- HEAD locale = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
+- origin/main = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
+- GitHub main = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati preservati
 
 Problemi ancora aperti:
-- i quattro pulsanti di azione BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO sono ancora presenti nella pagina Gestione Ordini;
-- le tre pagine di stampa non dipendono più dal filtro stato = bozza, quindi la rimozione dei pulsanti può essere affrontata nel prossimo intervento senza alterare le stampe;
-- il campo stato rimane nel database e non viene rimosso in questa fase;
+- il campo stato rimane nel database;
+- Stato attuale, colori associati allo stato e filtro stato rimangono per ora nella Gestione Ordini e non vengono rimossi;
 - la RPC crea_ordine_atomico è presente in Supabase ma non è ancora versionata nel repository come migrazione SQL;
 - RLS resta disabilitato su ordini e righe_ordine e gli accessi diretti anon devono essere affrontati con un intervento di sicurezza separato;
 - la route /ordine-manuale resta fuori dalla protezione middleware e deve essere affrontata separatamente.
 
 Prossimo intervento:
-- ripetere un controllo esclusivamente di lettura sul file reale app/gestione-ordini/page.js prima di qualsiasi modifica;
-- verificare nuovamente la funzione aggiornaStato e tutti i suoi utilizzi;
-- creare o riallineare un TEST dedicato alla rimozione dei pulsanti stato partendo dall'ufficiale corrente;
-- rimuovere nel TEST esclusivamente i quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO e, soltanto se il nuovo audit lo conferma, la funzione aggiornaStato rimasta senza utilizzi;
-- mantenere invariati il campo stato nel database, la visualizzazione dello stato attuale, il filtro stato e le altre logiche della pagina;
-- non modificare nello stesso intervento Stampa Totale, Stampa Andrea, Stampa Raffaele, Supabase o schema database.
+- nessun nuovo intervento funzionale è ancora autorizzato;
+- prima della prossima modifica scegliere con l'utente uno degli interventi ancora aperti ed eseguire un nuovo audit esclusivamente di lettura;
+- l'eventuale rimozione futura di Stato attuale, colori e filtro stato deve restare un intervento separato;
+- non modificare Supabase, schema database o altre logiche insieme al prossimo intervento.
 
 Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
 
@@ -408,13 +403,11 @@ Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordi
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
 Prossimo intervento da confermare:
-- nuovo audit esclusivamente di lettura di app/gestione-ordini/page.js;
-- verifica completa della funzione aggiornaStato, dei suoi utilizzi e delle dipendenze della visualizzazione stato;
-- creazione o riallineamento di un TEST dedicato partendo dall'ufficiale corrente;
-- eventuale rimozione nel TEST esclusivamente dei quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
-- eventuale rimozione di aggiornaStato soltanto se il nuovo audit conferma che non rimangono utilizzi;
-- mantenimento del campo stato nel database, della visualizzazione dello stato attuale e del filtro stato;
-- nessuna modifica a Supabase, schema database o pagine di stampa nello stesso intervento.
+- nessun nuovo intervento funzionale è ancora autorizzato;
+- scegliere con l'utente uno degli interventi ancora aperti;
+- prima di qualsiasi nuova modifica eseguire un nuovo audit esclusivamente di lettura sui file realmente coinvolti;
+- mantenere separati interventi funzionali, grafici, database e sicurezza;
+- l'eventuale ulteriore semplificazione di Stato attuale, colori e filtro stato resta un intervento separato e non è attualmente richiesta.
 
 Stato dipendenza stampe:
 - Stampa Totale, Andrea e Raffaele non filtrano più gli ordini per stato;
