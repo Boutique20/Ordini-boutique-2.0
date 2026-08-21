@@ -96,7 +96,6 @@ function StampaAndreaContent() {
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("stato", "bozza")
       .eq("data_operativa", dataSelezionata)
       .order("id", { ascending: true });
 
@@ -289,7 +288,7 @@ setDati(risultatoOrdinato);
         >
           <div>
             <h1 style={{ margin: 0, fontSize: 22 }}>
-              Preparazione congelato - Ordini in bozza - {formatDataConsegna(dataOperativa)}
+              Preparazione congelato - Ordini della data - {formatDataConsegna(dataOperativa)}
             </h1>
           </div>
 
@@ -338,7 +337,7 @@ setDati(risultatoOrdinato);
               marginBottom: 14,
             }}
           >
-            Mostra solo i prodotti Andrea degli ordini in bozza della data selezionata.
+            Mostra solo i prodotti Andrea degli ordini della data selezionata.
           </div>
 
           <div
@@ -477,7 +476,7 @@ setDati(risultatoOrdinato);
         {caricamento ? (
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
-          <p>Nessun ordine Andrea in bozza per la data selezionata.</p>
+          <p>Nessun ordine Andrea per la data selezionata.</p>
         ) : (
           <div
             style={{

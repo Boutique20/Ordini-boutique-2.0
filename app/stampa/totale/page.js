@@ -615,7 +615,6 @@ function StampaTotaleContent() {
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("stato", "bozza")
       .eq("data_operativa", dataSelezionata)
       .order("id", { ascending: true });
 
@@ -2086,7 +2085,7 @@ function gestisciFineDrag(event) {
       {caricamento ? (
         <p>Caricamento dati...</p>
       ) : celleOrdini.length === 0 ? (
-        <p>Nessun ordine in bozza per la data selezionata.</p>
+        <p>Nessun ordine per la data selezionata.</p>
       ) : (
         <DndContext
           sensors={sensors}
@@ -2098,7 +2097,7 @@ function gestisciFineDrag(event) {
               return (
                 <div className="pagina-stampa" key={`pagina-${indexPagina}`}>
                   <div className="intestazione-stampa">
-                    <div>STAMPA TOTALE - ORDINI IN BOZZA</div>
+                    <div>STAMPA TOTALE - ORDINI DELLA DATA</div>
                     <div>
                       Generata: {formatDataOra(new Date().toISOString())}
                     </div>

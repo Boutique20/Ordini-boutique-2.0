@@ -104,7 +104,6 @@ function StampaRaffaeleContent() {
     const { data: ordini, error: ordiniError } = await supabase
       .from("ordini")
       .select("*")
-      .eq("stato", "bozza")
       .eq("data_operativa", dataSelezionata)
       .order("id", { ascending: true });
 
@@ -439,7 +438,7 @@ function StampaRaffaeleContent() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: 20 }}>
-            Preparazione pesce - Ordini in bozza - {formatDataConsegna(dataOperativa)}
+            Preparazione pesce - Ordini della data - {formatDataConsegna(dataOperativa)}
           </h1>
 
           <button
@@ -487,7 +486,7 @@ function StampaRaffaeleContent() {
               marginBottom: 14,
             }}
           >
-            Mostra solo i prodotti Raffaele degli ordini in bozza della data selezionata.
+            Mostra solo i prodotti Raffaele degli ordini della data selezionata.
           </div>
 
           <div
@@ -627,7 +626,7 @@ function StampaRaffaeleContent() {
           <p>Caricamento dati...</p>
         ) : Object.keys(dati).length === 0 ? (
           <p>
-            Nessun ordine Raffaele in bozza
+            Nessun ordine Raffaele
             per la data selezionata.
           </p>
         ) : (
