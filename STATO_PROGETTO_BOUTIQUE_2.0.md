@@ -29,50 +29,51 @@ Data:
 21/08/2026
 
 Commit funzionale pubblicato:
-5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
+e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
 
 Messaggio commit:
-Rimuove pulsanti stato da Gestione Ordini
+Aggiunge etichette descrittive alle zone
 
 File pubblicato:
 app/gestione-ordini/page.js
 
 Hash SHA256 ufficiale:
-721D548B4240D5DEBDF541C97BED5DF05E0D1A1173F5108940AB30E52828FB44
+A1653A1196BEF809F43EA36094F2F850B5639DB1DAF57083AAE5A94F0D165933
 
 Funzione completata:
-- rimossi dalla pagina Gestione Ordini i quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
-- rimossa la funzione aggiornaStato, dopo audit che ha verificato che era utilizzata esclusivamente dai quattro pulsanti rimossi;
-- rimossa l'unica scrittura diretta del campo stato presente nei file tracciati dell'app tramite aggiornaStato;
-- rimosso il riquadro "Regola operativa stati", ormai non coerente con il comportamento delle stampe;
-- mantenuta invariata la visualizzazione "Stato attuale" nelle schede ordine;
-- mantenuti invariati getColoreStato e getStileCard e quindi i colori associati allo stato;
-- mantenuto invariato il filtro stato con Tutti gli stati / BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
-- mantenuto invariato il campo stato nel database;
-- mantenuti invariati assegnazione Zona 1-4, modifica ordine, eliminazione ordine, data operativa, filtri cliente/data, storico e righe prodotto;
+- aggiunte nella Gestione Ordini etichette descrittive alle quattro zone;
+- Zona 1 visualizzata come "Zona 1 - ALTAMURA/GIOVINAZZO";
+- Zona 2 visualizzata come "Zona 2 - BAT";
+- Zona 3 visualizzata come "Zona 3 - BARI/POGGIOFRANCO";
+- Zona 4 visualizzata come "Zona 4 - PALESE/S.SPIRITO/BARI SUD";
+- aggiornati esclusivamente i testi visibili dei pulsanti Zona e del badge della zona assegnata;
+- mantenuti invariati i valori database numerici 1, 2, 3 e 4;
+- mantenuta invariata la funzione aggiornaZona e la scrittura .update({ zona: nuovaZona });
+- mantenuto invariato "DA ASSEGNARE" per gli ordini senza zona;
+- mantenuti invariati data operativa, filtri, stato, modifica ordine, eliminazione ordine e righe prodotto;
 - nessuna modifica a Stampa Totale, Stampa Andrea o Stampa Raffaele;
 - nessuna modifica a tabelle, colonne, policy, funzioni SQL o dati Supabase.
 
 Test eseguiti e verificati:
 - audit esclusivamente di lettura eseguito su app/gestione-ordini/page.js;
-- verificato che aggiornaStato aveva una sola chiamata, proveniente dal blocco dei quattro pulsanti stato;
-- verificato che .update({ stato: nuovoStato }) era l'unica scrittura diretta del campo stato nei file tracciati dell'app;
-- verificato che Stampa Totale, Andrea e Raffaele non contengono più filtri .eq("stato", ...);
-- creato TEST dedicato app/gestione-ordini-stato-test/page.js partendo esattamente dall'ufficiale;
-- diff TEST verificato: 0 aggiunte e 71 eliminazioni;
+- verificata integralmente la funzione aggiornaZona prima dell'intervento;
+- creato TEST dedicato app/gestione-ordini-zone-test/page.js partendo esattamente dall'ufficiale;
+- verificato il diff esatto del TEST;
+- verificato che aggiornaZona continuasse a utilizzare valori numerici per la zona;
 - pagina TEST caricata correttamente nel browser locale;
-- verificata l'assenza dei quattro pulsanti BOZZA / LAVORAZIONE / PRONTO / CONSEGNATO;
-- verificata l'assenza del riquadro "Regola operativa stati";
-- verificata la permanenza di Stato attuale, pulsanti Zona 1-4, Modifica ordine, Elimina ordine e filtro stato;
-- verificato nel browser il filtro BOZZA e il ritorno a Tutti gli stati;
+- verificate nel browser le quattro etichette descrittive con i nomi corretti;
+- verificato nel browser il badge completo della zona già assegnata;
+- verificata la permanenza dei pulsanti Modifica ordine ed Elimina ordine;
+- durante la prova visuale non sono stati cliccati i pulsanti Zona, evitando scritture di prova sul database reale;
 - TEST e ufficiale verificati identici dopo la promozione;
-- SHA256 finale TEST e ufficiale: 721D548B4240D5DEBDF541C97BED5DF05E0D1A1173F5108940AB30E52828FB44;
-- commit verificato contenente esclusivamente app/gestione-ordini/page.js.
+- SHA256 finale TEST e ufficiale: A1653A1196BEF809F43EA36094F2F850B5639DB1DAF57083AAE5A94F0D165933;
+- commit verificato contenente esclusivamente app/gestione-ordini/page.js;
+- commit pubblicato con successo su main.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
-- origin/main = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
-- GitHub main = 5cb7de3016577b6de2e3d39e3013ef5ab9f09db6
+- HEAD locale = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
+- origin/main = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
+- GitHub main = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati preservati
@@ -87,6 +88,7 @@ Problemi ancora aperti:
 Prossimo intervento:
 - nessun nuovo intervento funzionale è ancora autorizzato;
 - prima della prossima modifica scegliere con l'utente uno degli interventi ancora aperti ed eseguire un nuovo audit esclusivamente di lettura;
+- eventuali etichette descrittive in altre pagine devono essere valutate con interventi separati;
 - l'eventuale rimozione futura di Stato attuale, colori e filtro stato deve restare un intervento separato;
 - non modificare Supabase, schema database o altre logiche insieme al prossimo intervento.
 
@@ -416,7 +418,6 @@ Stato dipendenza stampe:
 
 Interventi funzionali successivi ancora previsti:
 - valutare separatamente, solo se richiesto, l'eventuale ulteriore semplificazione della visualizzazione e del filtro stato;
-- etichette descrittive delle zone mantenendo i valori database numerici;
 - controllo integrità anche per Stampa Andrea;
 - controllo integrità anche per Stampa Raffaele;
 - apprendimento della posizione abituale dei clienti;
@@ -428,13 +429,14 @@ Interventi tecnici e di sicurezza da mantenere separati:
 - analizzare RLS e privilegi diretti anon/authenticated su ordini e righe_ordine senza mescolare questa attività con correzioni funzionali;
 - verificare separatamente la protezione di accesso alla route /ordine-manuale.
 
-Etichette zone già definite per un intervento futuro:
+Etichette zone pubblicate nella Gestione Ordini:
 - Zona 1 - ALTAMURA/GIOVINAZZO
 - Zona 2 - BAT
 - Zona 3 - BARI/POGGIOFRANCO
-- Zona 4 - PALESE/SANTO SPIRITO
+- Zona 4 - PALESE/S.SPIRITO/BARI SUD
 
-I valori database delle zone dovranno restare numerici.
+I valori database delle zone restano numerici.
+Eventuali etichette descrittive in altre pagine devono essere valutate separatamente.
 
 ## 12. REGOLA PER I PROSSIMI AGGIORNAMENTI DEL DOCUMENTO
 
