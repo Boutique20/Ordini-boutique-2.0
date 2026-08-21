@@ -29,50 +29,54 @@ Data:
 21/08/2026
 
 Commit funzionale pubblicato:
-8e372902f0b081a3c4e0d106a28b006542086770
+86234c8e34aec9d2504abdaf2e948426b397957b
 
 Messaggio commit:
-Aggiunge etichette zone allo Storico Ordini
+Porta a tre colonne la Stampa Raffaele
 
 File pubblicato:
-app/gestione-ordini/storico/page.js
+app/stampa/raffaele/page.js
 
 Hash SHA256 ufficiale:
-15D9DDEDCB4CBED7F2F31D05D297A2F1085647D2A59FDE57ACD8527AA517D712
+D41EA8197F1DF3FEF5B93299456E7C4218AA5F1C1390FCB70E88BB2F016384BD
 
 Funzione completata:
-- aggiunte nello Storico Ordini le etichette descrittive delle quattro zone;
-- Zona 1 visualizzata come "ZONA 1 - ALTAMURA/GIOVINAZZO";
-- Zona 2 visualizzata come "ZONA 2 - BAT";
-- Zona 3 visualizzata come "ZONA 3 - BARI/POGGIOFRANCO";
-- Zona 4 visualizzata come "ZONA 4 - PALESE/S.SPIRITO/BARI SUD";
-- modificato esclusivamente il testo visualizzato della zona nelle schede dello Storico;
-- mantenuti invariati i valori database numerici 1, 2, 3 e 4;
-- mantenuta invariata la condizione "DA ASSEGNARE" per gli ordini senza zona;
-- mantenute invariate query Supabase, date, filtri cliente e tipo ordine, stato, prodotti e caricamento dello Storico;
-- lo Storico rimane di sola lettura;
-- nessuna modifica a Stampa Totale, Stampa Andrea o Stampa Raffaele;
-- nessuna modifica a tabelle, colonne, policy, funzioni SQL o dati Supabase.
+- aggiunto nella Stampa Raffaele uno spazio dedicato alla scrittura manuale del peso per ogni singolo prodotto;
+- lo spazio PESO è posizionato sulla stessa riga del prodotto, sul lato destro;
+- riservato circa il 40% della riga prodotto allo spazio PESO;
+- mantenuti invariati quantità, unità, nome prodotto ed eventuale nota;
+- portata la griglia della Stampa Raffaele da quattro a tre clienti per riga per aumentare lo spazio disponibile per il peso;
+- mantenute invariate Zona 1, Zona 2, Zona 3, Zona 4 e ordini senza zona;
+- mantenuto invariato il cambio pagina tra le zone;
+- mantenuto invariato l'ordine clienti derivato dalla Stampa Totale;
+- nessuna modifica alle query Supabase o ai dati;
+- nessuna modifica a Stampa Totale o Stampa Andrea;
+- modificate esclusivamente la presentazione della singola riga prodotto e la griglia clienti da quattro a tre colonne.
 
 Test eseguiti e verificati:
-- audit esclusivamente di lettura eseguito su app/gestione-ordini/storico/page.js;
-- verificata l'assenza di insert, update, delete e upsert nella pagina;
-- creato TEST dedicato app/gestione-ordini/storico-zone-test/page.js partendo esattamente dall'ufficiale;
-- verificato il diff esatto del TEST;
-- verificato che la sola logica modificata fosse il rendering testuale della zona;
-- pagina TEST caricata correttamente nel browser locale;
-- Zona 1 e Zona 2 verificate visivamente nel browser con le descrizioni corrette;
-- l'utente ha confermato nel browser anche le descrizioni corrette di Zona 3 e Zona 4;
-- "DA ASSEGNARE" non è stato verificato visivamente durante questa prova, ma la relativa condizione nel codice è rimasta invariata;
+- audit iniziale esclusivamente di lettura su app/stampa/raffaele/page.js;
+- verificato il rendering completo dei prodotti e le dipendenze relative a ordine, zone e paginazione;
+- SHA256 ufficiale prima della modifica: 13D0973C7FD977BC30BBD5301F61742BFAB599874C6BEF6E5339C78B58E06194;
+- creato TEST dedicato app/stampa/raffaele-peso-test/page.js partendo esattamente dall'ufficiale;
+- modificato esclusivamente il blocco di rendering della singola riga prodotto;
+- verificato il diff esatto ufficiale/TEST;
+- verificato che il file ufficiale fosse rimasto invariato durante lo sviluppo del TEST;
+- TEST provato nel browser locale;
+- l'utente ha confermato come corretto lo spazio PESO a fianco del prodotto;
+- successivamente l'utente ha richiesto tre clienti per riga per aumentare ulteriormente lo spazio disponibile;
+- la rettifica da quattro a tre colonne è stata eseguita esclusivamente nel TEST e verificata con diff di una sola riga;
+- l'utente ha verificato nel browser locale e approvato la versione definitiva con tre clienti per riga e spazio PESO al 40%;
+- creato backup ufficiale prima della promozione: backup-raffaele-ufficiale-prima-spazio-peso-20260821-114243.js;
+- creato un secondo backup ufficiale prima della rettifica a tre colonne: backup-raffaele-ufficiale-prima-3-colonne-20260821-120513.js;
 - TEST e ufficiale verificati identici dopo la promozione;
-- SHA256 finale TEST e ufficiale: 15D9DDEDCB4CBED7F2F31D05D297A2F1085647D2A59FDE57ACD8527AA517D712;
-- commit verificato contenente esclusivamente app/gestione-ordini/storico/page.js;
+- SHA256 finale TEST e ufficiale: D41EA8197F1DF3FEF5B93299456E7C4218AA5F1C1390FCB70E88BB2F016384BD;
+- commit verificato contenente esclusivamente app/stampa/raffaele/page.js;
 - commit pubblicato con successo su main.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = 8e372902f0b081a3c4e0d106a28b006542086770
-- origin/main = 8e372902f0b081a3c4e0d106a28b006542086770
-- GitHub main = 8e372902f0b081a3c4e0d106a28b006542086770
+- HEAD locale = 86234c8e34aec9d2504abdaf2e948426b397957b
+- origin/main = 86234c8e34aec9d2504abdaf2e948426b397957b
+- GitHub main = 86234c8e34aec9d2504abdaf2e948426b397957b
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati preservati
@@ -86,7 +90,8 @@ Problemi ancora aperti:
 
 Prossimo intervento:
 - nessun nuovo intervento funzionale è ancora autorizzato;
-- prima della prossima modifica scegliere con l'utente uno degli interventi ancora aperti ed eseguire un nuovo audit esclusivamente di lettura;
+- prima della prossima modifica scegliere con l'utente l'intervento da eseguire ed effettuare un nuovo audit esclusivamente di lettura;
+- eventuali ulteriori modifiche alla Stampa Raffaele devono essere gestite separatamente;
 - eventuali etichette descrittive nelle altre pagine, comprese le stampe, devono essere valutate con interventi separati;
 - l'eventuale rimozione futura di Stato attuale, colori e filtro stato deve restare un intervento separato;
 - non modificare Supabase, schema database o altre logiche insieme al prossimo intervento.
