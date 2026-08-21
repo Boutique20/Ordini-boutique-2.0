@@ -221,24 +221,6 @@ export default function GestioneOrdiniPage() {
     setCaricamento(false);
   }
 
-  async function aggiornaStato(ordineId, nuovoStato) {
-    const { error } = await supabase
-      .from("ordini")
-      .update({ stato: nuovoStato })
-      .eq("id", ordineId);
-
-    if (error) {
-      console.error("Errore aggiornamento stato:", error);
-      alert(JSON.stringify(error, null, 2));
-      return;
-    }
-
-    setOrdini((prev) =>
-      prev.map((ordine) =>
-        ordine.id === ordineId ? { ...ordine, stato: nuovoStato } : ordine
-      )
-    );
-  }
 
   async function aggiornaZona(ordineId, nuovaZona) {
     const ordineCorrente = ordini.find(
@@ -528,33 +510,6 @@ export default function GestioneOrdiniPage() {
             </span>
           </div>
 
-          <div
-            style={{
-              marginBottom: 12,
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
-            {["bozza", "lavorazione", "pronto", "consegnato"].map((stato) => (
-              <button
-                key={stato}
-                onClick={() => aggiornaStato(ordine.id, stato)}
-                style={{
-                  padding: "8px 12px",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  backgroundColor:
-                    ordine.stato === stato ? getColoreStato(stato) : "#334155",
-                  color: "#fff",
-                }}
-              >
-                {stato.toUpperCase()}
-              </button>
-            ))}
-          </div>
 
           <div style={{ marginBottom: 6 }}>
             <strong>Note:</strong> {ordine.note_generali || "-"}
@@ -703,32 +658,6 @@ export default function GestioneOrdiniPage() {
           </div>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#111827",
-            border: "1px solid #334155",
-            borderRadius: 12,
-            padding: 14,
-            marginBottom: 22,
-            lineHeight: 1.5,
-          }}
-        >
-          <div style={{ fontWeight: "bold", marginBottom: 6, color: "#7dd3fc" }}>
-            Regola operativa stati
-          </div>
-          <div>
-            <strong>BOZZA</strong> = ordine nuovo da stampare
-          </div>
-          <div>
-            <strong>LAVORAZIONE</strong> = ordine già  preso in carico / già  stampato
-          </div>
-          <div>
-            <strong>PRONTO</strong> = ordine preparato
-          </div>
-          <div>
-            <strong>CONSEGNATO</strong> = ordine chiuso
-          </div>
-        </div>
 
         <div
           style={{
