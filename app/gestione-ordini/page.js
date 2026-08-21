@@ -102,6 +102,23 @@ function bottoneLink(backgroundColor) {
   };
 }
 
+const ETICHETTE_ZONE = {
+  1: "ALTAMURA/GIOVINAZZO",
+  2: "BAT",
+  3: "BARI/POGGIOFRANCO",
+  4: "PALESE/S.SPIRITO/BARI SUD",
+};
+
+function getEtichettaZona(zona) {
+  const numeroZona = Number(zona);
+  const descrizione = ETICHETTE_ZONE[numeroZona];
+
+  if (!descrizione) {
+    return `Zona ${zona}`;
+  }
+
+  return `Zona ${numeroZona} - ${descrizione}`;
+}
 export default function GestioneOrdiniPage() {
   const [ordini, setOrdini] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
@@ -419,8 +436,8 @@ export default function GestioneOrdiniPage() {
                     }}
                   >
                     {zonaAttiva
-                      ? "✓ Zona " + zona
-                      : "Zona " + zona}
+                      ? "✓ " + getEtichettaZona(zona)
+                      : getEtichettaZona(zona)}
                   </button>
                 );
               })}
@@ -490,7 +507,7 @@ export default function GestioneOrdiniPage() {
               {ordine.zona === null ||
               ordine.zona === undefined
                 ? "DA ASSEGNARE"
-                : "ZONA " + ordine.zona}
+                : getEtichettaZona(ordine.zona).toUpperCase()}
             </span>
           </div>
 
