@@ -651,7 +651,7 @@ function StampaRaffaeleContent() {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(4, 1fr)",
+                        "repeat(3, 1fr)",
                       gap: 8,
                       alignItems: "start",
                     }}
