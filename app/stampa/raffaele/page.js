@@ -715,18 +715,59 @@ function StampaRaffaeleContent() {
                                 >
                                   <div
                                     style={{
-                                      fontWeight: 700,
-                                      wordBreak:
-                                        "break-word",
+                                      display: "grid",
+                                      gridTemplateColumns:
+                                        "minmax(0, 1fr) 40%",
+                                      gap: 6,
+                                      alignItems: "center",
                                     }}
                                   >
-                                    {p.quantita}{" "}
-                                    {p.unita}{" "}
-                                    {p.nome}
-                                    {p.note
-                                      ? " - Nota: " +
-                                        p.note
-                                      : ""}
+                                    <div
+                                      style={{
+                                        fontWeight: 700,
+                                        wordBreak:
+                                          "break-word",
+                                      }}
+                                    >
+                                      {p.quantita}{" "}
+                                      {p.unita}{" "}
+                                      {p.nome}
+                                      {p.note
+                                        ? " - Nota: " +
+                                          p.note
+                                        : ""}
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        minWidth: 0,
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          fontSize: 10,
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        PESO:
+                                      </span>
+
+                                      <span
+                                        aria-hidden="true"
+                                        style={{
+                                          display: "block",
+                                          flex: 1,
+                                          minWidth: 0,
+                                          height: 12,
+                                          borderBottom:
+                                            "1px solid #000000",
+                                        }}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               )
