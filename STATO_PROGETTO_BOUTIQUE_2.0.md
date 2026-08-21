@@ -29,51 +29,50 @@ Data:
 21/08/2026
 
 Commit funzionale pubblicato:
-e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
+8e372902f0b081a3c4e0d106a28b006542086770
 
 Messaggio commit:
-Aggiunge etichette descrittive alle zone
+Aggiunge etichette zone allo Storico Ordini
 
 File pubblicato:
-app/gestione-ordini/page.js
+app/gestione-ordini/storico/page.js
 
 Hash SHA256 ufficiale:
-A1653A1196BEF809F43EA36094F2F850B5639DB1DAF57083AAE5A94F0D165933
+15D9DDEDCB4CBED7F2F31D05D297A2F1085647D2A59FDE57ACD8527AA517D712
 
 Funzione completata:
-- aggiunte nella Gestione Ordini etichette descrittive alle quattro zone;
-- Zona 1 visualizzata come "Zona 1 - ALTAMURA/GIOVINAZZO";
-- Zona 2 visualizzata come "Zona 2 - BAT";
-- Zona 3 visualizzata come "Zona 3 - BARI/POGGIOFRANCO";
-- Zona 4 visualizzata come "Zona 4 - PALESE/S.SPIRITO/BARI SUD";
-- aggiornati esclusivamente i testi visibili dei pulsanti Zona e del badge della zona assegnata;
+- aggiunte nello Storico Ordini le etichette descrittive delle quattro zone;
+- Zona 1 visualizzata come "ZONA 1 - ALTAMURA/GIOVINAZZO";
+- Zona 2 visualizzata come "ZONA 2 - BAT";
+- Zona 3 visualizzata come "ZONA 3 - BARI/POGGIOFRANCO";
+- Zona 4 visualizzata come "ZONA 4 - PALESE/S.SPIRITO/BARI SUD";
+- modificato esclusivamente il testo visualizzato della zona nelle schede dello Storico;
 - mantenuti invariati i valori database numerici 1, 2, 3 e 4;
-- mantenuta invariata la funzione aggiornaZona e la scrittura .update({ zona: nuovaZona });
-- mantenuto invariato "DA ASSEGNARE" per gli ordini senza zona;
-- mantenuti invariati data operativa, filtri, stato, modifica ordine, eliminazione ordine e righe prodotto;
+- mantenuta invariata la condizione "DA ASSEGNARE" per gli ordini senza zona;
+- mantenute invariate query Supabase, date, filtri cliente e tipo ordine, stato, prodotti e caricamento dello Storico;
+- lo Storico rimane di sola lettura;
 - nessuna modifica a Stampa Totale, Stampa Andrea o Stampa Raffaele;
 - nessuna modifica a tabelle, colonne, policy, funzioni SQL o dati Supabase.
 
 Test eseguiti e verificati:
-- audit esclusivamente di lettura eseguito su app/gestione-ordini/page.js;
-- verificata integralmente la funzione aggiornaZona prima dell'intervento;
-- creato TEST dedicato app/gestione-ordini-zone-test/page.js partendo esattamente dall'ufficiale;
+- audit esclusivamente di lettura eseguito su app/gestione-ordini/storico/page.js;
+- verificata l'assenza di insert, update, delete e upsert nella pagina;
+- creato TEST dedicato app/gestione-ordini/storico-zone-test/page.js partendo esattamente dall'ufficiale;
 - verificato il diff esatto del TEST;
-- verificato che aggiornaZona continuasse a utilizzare valori numerici per la zona;
+- verificato che la sola logica modificata fosse il rendering testuale della zona;
 - pagina TEST caricata correttamente nel browser locale;
-- verificate nel browser le quattro etichette descrittive con i nomi corretti;
-- verificato nel browser il badge completo della zona già assegnata;
-- verificata la permanenza dei pulsanti Modifica ordine ed Elimina ordine;
-- durante la prova visuale non sono stati cliccati i pulsanti Zona, evitando scritture di prova sul database reale;
+- Zona 1 e Zona 2 verificate visivamente nel browser con le descrizioni corrette;
+- l'utente ha confermato nel browser anche le descrizioni corrette di Zona 3 e Zona 4;
+- "DA ASSEGNARE" non è stato verificato visivamente durante questa prova, ma la relativa condizione nel codice è rimasta invariata;
 - TEST e ufficiale verificati identici dopo la promozione;
-- SHA256 finale TEST e ufficiale: A1653A1196BEF809F43EA36094F2F850B5639DB1DAF57083AAE5A94F0D165933;
-- commit verificato contenente esclusivamente app/gestione-ordini/page.js;
+- SHA256 finale TEST e ufficiale: 15D9DDEDCB4CBED7F2F31D05D297A2F1085647D2A59FDE57ACD8527AA517D712;
+- commit verificato contenente esclusivamente app/gestione-ordini/storico/page.js;
 - commit pubblicato con successo su main.
 
 Al termine della pubblicazione è stato verificato:
-- HEAD locale = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
-- origin/main = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
-- GitHub main = e0e4eb2123b67252b9e7ceb77ad4193b7c3b055e
+- HEAD locale = 8e372902f0b081a3c4e0d106a28b006542086770
+- origin/main = 8e372902f0b081a3c4e0d106a28b006542086770
+- GitHub main = 8e372902f0b081a3c4e0d106a28b006542086770
 - nessuna modifica tracciata residua
 - staging vuoto
 - file TEST, backup e script non tracciati preservati
@@ -88,7 +87,7 @@ Problemi ancora aperti:
 Prossimo intervento:
 - nessun nuovo intervento funzionale è ancora autorizzato;
 - prima della prossima modifica scegliere con l'utente uno degli interventi ancora aperti ed eseguire un nuovo audit esclusivamente di lettura;
-- eventuali etichette descrittive in altre pagine devono essere valutate con interventi separati;
+- eventuali etichette descrittive nelle altre pagine, comprese le stampe, devono essere valutate con interventi separati;
 - l'eventuale rimozione futura di Stato attuale, colori e filtro stato deve restare un intervento separato;
 - non modificare Supabase, schema database o altre logiche insieme al prossimo intervento.
 
@@ -429,14 +428,14 @@ Interventi tecnici e di sicurezza da mantenere separati:
 - analizzare RLS e privilegi diretti anon/authenticated su ordini e righe_ordine senza mescolare questa attività con correzioni funzionali;
 - verificare separatamente la protezione di accesso alla route /ordine-manuale.
 
-Etichette zone pubblicate nella Gestione Ordini:
+Etichette zone pubblicate nella Gestione Ordini e nello Storico Ordini:
 - Zona 1 - ALTAMURA/GIOVINAZZO
 - Zona 2 - BAT
 - Zona 3 - BARI/POGGIOFRANCO
 - Zona 4 - PALESE/S.SPIRITO/BARI SUD
 
 I valori database delle zone restano numerici.
-Eventuali etichette descrittive in altre pagine devono essere valutate separatamente.
+Eventuali etichette descrittive nelle altre pagine, comprese le stampe, devono essere valutate separatamente.
 
 ## 12. REGOLA PER I PROSSIMI AGGIORNAMENTI DEL DOCUMENTO
 
