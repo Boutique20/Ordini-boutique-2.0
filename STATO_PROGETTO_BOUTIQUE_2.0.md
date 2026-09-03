@@ -488,6 +488,51 @@ Prossimo intervento:
 - verificare la struttura delle quantità, delle unità e delle eventuali righe aggiuntive;
 - progettare separatamente un contatore dei prodotti inseriti nell'ordine manuale, senza modificare salvataggio ordini, quantità, unità, Supabase o altre logiche approvate.
 
+### Aggiornamento 03/09/2026 - Contatore prodotti ordine manuale
+
+Data:
+03/09/2026
+
+Commit pubblicato:
+805b2859ba3ab8ee0f74eb4af59e266d643a12f5
+
+File modificato:
+- app/ordine-manuale/page.js
+
+Funzione completata:
+- nella pagina interna di inserimento ordine manuale è stato aggiunto il contatore "Prodotti inseriti";
+- il contatore è visualizzato nel Riepilogo ordine, subito dopo la data di consegna prevista e prima dell'elenco dei prodotti inseriti;
+- il valore deriva direttamente da riepilogoOrdine.length;
+- ogni quantità valida maggiore di zero conta come un prodotto inserito;
+- le quantità aggiuntive create con "+ Aggiungi altra quantità" vengono conteggiate separatamente, anche quando appartengono allo stesso prodotto;
+- una quantità vuota o pari a zero non viene conteggiata;
+- eliminando o azzerando una quantità valida il contatore diminuisce automaticamente;
+- il contatore è esclusivamente visuale e non viene salvato nel database;
+- non sono state modificate le logiche di quantità, unità KG/PZ, note, data operativa, invio ordine, RPC Supabase o notifica Telegram;
+- nessun'altra pagina dell'applicazione è stata modificata.
+
+Test eseguiti:
+- prova browser sulla pagina /ordine-manuale-test con verifica dell'incremento del contatore durante l'inserimento dei prodotti;
+- verifica del conteggio separato delle righe aggiuntive dello stesso prodotto;
+- verifica della diminuzione del contatore cancellando o azzerando una quantità;
+- verifica della posizione grafica sotto "Consegna prevista" nel Riepilogo ordine;
+- test approvato esplicitamente dall'utente;
+- file ufficiale protetto durante tutta la fase TEST;
+- dopo approvazione utente, TEST copiato sull'ufficiale con SHA256 identico;
+- git diff --check superato;
+- commit verificato con esclusivamente app/ordine-manuale/page.js;
+- push verificato con HEAD uguale a origin/main.
+
+Problemi o verifiche ancora aperte:
+- nessun problema rilevato nel collaudo del contatore prodotti;
+- restano invariati gli interventi ancora aperti già elencati nella sezione 11;
+- restano aperti i collaudi dedicati della Stampa Totale per nuovo ordine Zona 4, nuovo ordine senza zona e nuovo ordine in presenza di unioni.
+
+Prossimo intervento:
+- nessun nuovo intervento funzionale è automaticamente autorizzato;
+- scegliere con l'utente il prossimo intervento tra quelli ancora aperti;
+- prima di qualsiasi nuova modifica applicativa eseguire un nuovo audit esclusivamente di lettura sui file realmente coinvolti.
+
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
 Prossimo intervento da confermare:
