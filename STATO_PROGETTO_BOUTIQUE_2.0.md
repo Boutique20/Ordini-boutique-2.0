@@ -1,6 +1,6 @@
 # STATO PROGETTO BOUTIQUE 2.0
 
-Ultimo aggiornamento: 21/08/2026
+Ultimo aggiornamento: 03/09/2026
 
 ## 1. PROGETTO
 
@@ -405,6 +405,49 @@ Rollback database, solo dopo aver eliminato tutte le dipendenze applicative dall
 DROP FUNCTION IF EXISTS public.crea_ordine_atomico(bigint, text, text, date, jsonb);
 
 Non sono state introdotte modifiche strutturali alle tabelle ordini e righe_ordine da ripristinare.
+
+### Aggiornamento 03/09/2026 - Riorganizzazione incrementale Stampa Totale
+
+Data:
+03/09/2026
+
+Commit pubblicato:
+80bea8045293c603bc0f2592ee435267d405813d
+
+File modificato:
+- app/stampa/totale/page.js
+
+Funzione completata:
+- il pulsante Riorganizza per zone non ricostruisce più l'intera griglia quando esiste una disposizione salvata;
+- vengono individuati soltanto i nuovi ordini/celle non ancora rappresentati nel layout salvato;
+- i nuovi ordini vengono inseriti negli spazi automatici disponibili della rispettiva zona;
+- clienti già posizionati, spostamenti manuali, celle vuote manuali e unioni non vengono volontariamente riorganizzati dalla nuova funzione;
+- se non esiste spazio disponibile nella relativa fascia viene aggiunta una nuova pagina in fondo, senza spostare le pagine già salvate;
+- se non esistono nuovi ordini viene mostrato il messaggio 'Non ci sono nuovi ordini da riorganizzare.' e la griglia non viene modificata;
+- gli ID degli spazi vuoti automatici già salvati vengono mantenuti per evitare il collasso del layout quando cambia il calcolo automatico delle zone.
+
+Test eseguiti:
+- collaudo Supabase isolato sulla data 31/12/2026 con clienti iniziali Zona 1, Zona 2 e Zona 3 e disposizione manuale salvata;
+- aggiunta di un nuovo ordine Zona 1: il nuovo ordine è stato inserito in uno spazio disponibile senza spostare i clienti già salvati;
+- salvataggio disposizione e Ctrl+F5: le posizioni sono rimaste persistenti;
+- test saturazione Zona 1 con 9 ordini Zona 1 complessivi: gli spazi liberi della prima riga sono stati utilizzati e l'ordine eccedente è stato collocato nella prima cella di una nuova pagina aggiunta in fondo;
+- dopo salvataggio e Ctrl+F5 anche la nuova pagina è rimasta persistente;
+- controllo integrità durante il test: 11 ordini, 11 righe Supabase, 11 righe uniche nella griglia, 0 contenuti tagliati, INTEGRITA OK;
+- pulizia completa dati TEST 31/12/2026 verificata: 0 ordini, 0 righe, 0 layout;
+- prova finale sulla pagina ufficiale del 31/08/2026: 28 ordini, 96 righe Supabase, 96 righe uniche nella griglia, 0 contenuti tagliati, INTEGRITA OK;
+- sulla pagina ufficiale, senza nuovi ordini, Riorganizza per zone ha mostrato il messaggio previsto e la griglia è rimasta invariata;
+- commit verificato con un solo file ufficiale e push verificato con HEAD uguale a origin/main.
+
+Problemi o verifiche ancora aperte:
+- non è stato eseguito un collaudo dedicato con inserimento di un nuovo ordine Zona 4;
+- non è stato eseguito un collaudo dedicato con inserimento di un nuovo ordine senza zona;
+- non è stato eseguito un collaudo dedicato di inserimento nuovo ordine mentre sono presenti unioni da coinvolgere direttamente nel caso di test;
+- gli altri interventi già elencati nella sezione 11 restano invariati.
+
+Prossimo intervento:
+- nessun nuovo intervento funzionale è automaticamente autorizzato;
+- prima di qualsiasi nuova modifica applicativa eseguire un nuovo audit esclusivamente di lettura sui file coinvolti e concordare con l'utente l'intervento successivo.
+
 
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
