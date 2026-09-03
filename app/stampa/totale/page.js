@@ -1165,21 +1165,85 @@ function StampaTotaleContent() {
     gruppiZone
   );
 
-  const numeroSlotTotali =
+  /*
+   * La disposizione salvata ha priorità.
+   * Se il layout salvato contiene più pagine rispetto
+   * al nuovo calcolo automatico delle zone, quelle
+   * pagine e i relativi spazi vuoti devono restare.
+   */
+  const numeroSlotAutomatici =
     pagineZone.totali * CELLE_PER_PAGINA;
 
-  const numeroCelleVuote =
-    numeroSlotTotali - idsOrdini.length;
+  const numeroSlotSalvati =
+    ordineCelle.length;
 
-  const celleVuote = Array.from({
-    length: numeroCelleVuote,
-  }).map((_, index) => ({
-    id: `__vuota__auto_${index}`,
-    vuota: true,
-    manuale: false,
-    zona: null,
-  }));
+  const numeroSlotTotali = Math.max(
+    CELLE_PER_PAGINA,
+    numeroSlotAutomatici,
+    numeroSlotSalvati
+  );
 
+  /*
+   * Mantiene gli ID delle celle vuote automatiche
+   * già presenti nel layout salvato.
+   */
+  const idsVuotiAutomaticiSalvati = [
+    ...new Set(
+      ordineCelle.filter((id) =>
+        String(id).startsWith("__vuota__auto_")
+      )
+    ),
+  ];
+
+  const numeroCelleVuoteNecessarie = Math.max(
+    0,
+    numeroSlotTotali - idsOrdini.length
+  );
+
+  /*
+   * Non elimina mai automaticamente uno spazio vuoto
+   * che apparteneva alla disposizione salvata.
+   */
+  const numeroCelleVuote = Math.max(
+    numeroCelleVuoteNecessarie,
+    idsVuotiAutomaticiSalvati.length
+  );
+
+  const idsVuotiAutomatici = [
+    ...idsVuotiAutomaticiSalvati,
+  ];
+
+  const setIdsVuotiAutomatici = new Set(
+    idsVuotiAutomatici
+  );
+
+  let indiceVuotoAutomatico = 0;
+
+  while (
+    idsVuotiAutomatici.length <
+    numeroCelleVuote
+  ) {
+    const nuovoId =
+      `__vuota__auto_${indiceVuotoAutomatico}`;
+
+    indiceVuotoAutomatico += 1;
+
+    if (setIdsVuotiAutomatici.has(nuovoId)) {
+      continue;
+    }
+
+    setIdsVuotiAutomatici.add(nuovoId);
+    idsVuotiAutomatici.push(nuovoId);
+  }
+
+  const celleVuote = idsVuotiAutomatici.map(
+    (id) => ({
+      id,
+      vuota: true,
+      manuale: false,
+      zona: null,
+    })
+  );
   const tutteLeCelleBase = [
     ...celleSenzaRiempimento,
     ...celleVuote,
@@ -1205,11 +1269,31 @@ function StampaTotaleContent() {
    */
   const idsBase = idsAutomaticiPerZone;
 
+  /*
+   * Quando esiste una disposizione salvata,
+   * fuori da essa devono comparire soltanto
+   * i veri elementi non ancora posizionati.
+   *
+   * Le nuove celle vuote automatiche calcolate
+   * dalle zone non devono allungare da sole
+   * la disposizione salvata.
+   */
+  const idsNonPosizionati =
+    ordineCelle.length > 0
+      ? celleSenzaRiempimento
+          .map((cella) => cella.id)
+          .filter(
+            (id) =>
+              !String(id).startsWith("__vuota__") &&
+              !ordineCelle.includes(id)
+          )
+      : [];
+
   const idsOrdinati =
     ordineCelle.length > 0
       ? [
           ...ordineCelle.filter((id) => celleMap.has(id)),
-          ...idsBase.filter((id) => !ordineCelle.includes(id)),
+          ...idsNonPosizionati,
         ]
       : idsBase;
 
@@ -1333,18 +1417,388 @@ function StampaTotaleContent() {
 
   function riorganizzaPerZone() {
     const conferma = window.confirm(
-      "Riorganizzare la griglia in base alle zone? " +
-      "Gli spostamenti manuali non ancora salvati " +
-      "verranno sostituiti."
+      "Inserire nelle rispettive zone soltanto gli ordini nuovi? " +
+      "I clienti già posizionati, gli spostamenti manuali, " +
+      "le unioni e gli spazi vuoti manuali resteranno invariati."
     );
 
     if (!conferma) {
       return;
     }
 
-    setOrdineCelle([...idsAutomaticiPerZone]);
-  }
+    /*
+     * Prima organizzazione:
+     * se non esiste ancora alcuna disposizione,
+     * mantiene il comportamento automatico completo.
+     */
+    if (ordineCelle.length === 0) {
+      setOrdineCelle([...idsAutomaticiPerZone]);
+      return;
+    }
 
+    /*
+     * Identifica ciò che è già rappresentato
+     * nella disposizione salvata.
+     */
+    const idsGiaRappresentati = new Set(
+      ordineCelle.filter(
+        (id) => !String(id).startsWith("__vuota__")
+      )
+    );
+
+    /*
+     * Una cella doppia rappresenta anche
+     * i due clienti contenuti al suo interno.
+     */
+    Object.entries(celleDoppie).forEach(
+      ([idDoppia, gruppo]) => {
+        if (!ordineCelle.includes(idDoppia)) {
+          return;
+        }
+
+        const ids = Array.isArray(gruppo?.ids)
+          ? gruppo.ids
+          : [];
+
+        ids.forEach((idCliente) => {
+          idsGiaRappresentati.add(idCliente);
+        });
+      }
+    );
+
+    /*
+     * Individua soltanto le nuove celle reali.
+     * Un cliente già presente che cambia zona
+     * NON viene considerato nuovo.
+     */
+    const nuoveCelle = celleOrdiniSingole
+      .filter(
+        (cella) => !idsGiaRappresentati.has(cella.id)
+      )
+      .sort((a, b) => {
+        const indiceA =
+          idsAutomaticiPerZone.indexOf(a.id);
+
+        const indiceB =
+          idsAutomaticiPerZone.indexOf(b.id);
+
+        return indiceA - indiceB;
+      });
+
+    if (nuoveCelle.length === 0) {
+      window.alert(
+        "Non ci sono nuovi ordini da riorganizzare."
+      );
+      return;
+    }
+
+    function getZonaCella(cella) {
+      const zona = normalizzaZona(cella.zona);
+
+      return zona === null
+        ? "senzaZona"
+        : String(zona);
+    }
+
+    /*
+     * Classifica gli spazi delle pagine già esistenti.
+     *
+     * Le pagine principali mantengono:
+     * riga 1 = Zona 1
+     * riga 2 = Zona 2
+     * riga 3 = Zona 3
+     *
+     * Zona 4 e senza zona utilizzano la prima riga
+     * dei rispettivi blocchi.
+     */
+    function getZonaSlotEsistente(indiceAssoluto) {
+      const numeroPagina = Math.floor(
+        indiceAssoluto / CELLE_PER_PAGINA
+      );
+
+      const posizionePagina =
+        indiceAssoluto % CELLE_PER_PAGINA;
+
+      const numeroRiga = Math.floor(
+        posizionePagina / COLONNE_PER_PAGINA
+      );
+
+      if (numeroPagina < pagineZone.principali) {
+        if (numeroRiga === 0) return "1";
+        if (numeroRiga === 1) return "2";
+        if (numeroRiga === 2) return "3";
+      }
+
+      const inizioZona4 =
+        pagineZone.principali;
+
+      const fineZona4 =
+        inizioZona4 + pagineZone.zona4;
+
+      if (
+        numeroPagina >= inizioZona4 &&
+        numeroPagina < fineZona4
+      ) {
+        return numeroRiga === 0
+          ? "4"
+          : null;
+      }
+
+      const inizioSenzaZona =
+        fineZona4;
+
+      const fineSenzaZona =
+        inizioSenzaZona + pagineZone.senzaZona;
+
+      if (
+        numeroPagina >= inizioSenzaZona &&
+        numeroPagina < fineSenzaZona
+      ) {
+        return numeroRiga === 0
+          ? "senzaZona"
+          : null;
+      }
+
+      return null;
+    }
+
+    /*
+     * Parte esattamente dalla disposizione salvata.
+     */
+    const nuovoOrdine = [...ordineCelle];
+
+    const slotLiberiPerZona = {
+      1: [],
+      2: [],
+      3: [],
+      4: [],
+      senzaZona: [],
+    };
+
+    /*
+     * Prima cerca spazi AUTO già disponibili
+     * nelle pagine salvate.
+     *
+     * Le celle vuote MANUALI non vengono
+     * mai utilizzate automaticamente.
+     */
+    nuovoOrdine.forEach((id, indice) => {
+      if (
+        !String(id).startsWith("__vuota__auto_")
+      ) {
+        return;
+      }
+
+      const zonaSlot =
+        getZonaSlotEsistente(indice);
+
+      if (
+        zonaSlot &&
+        slotLiberiPerZona[zonaSlot]
+      ) {
+        slotLiberiPerZona[zonaSlot].push(indice);
+      }
+    });
+
+    /*
+     * Generatore di celle vuote tecniche
+     * per eventuali nuove pagine.
+     */
+    let contatoreNuoviVuoti = 0;
+
+    function creaNuovoIdVuotoAuto() {
+      let nuovoId;
+
+      do {
+        nuovoId =
+          `__vuota__auto_incrementale_${Date.now()}_${contatoreNuoviVuoti}`;
+
+        contatoreNuoviVuoti += 1;
+      } while (
+        nuovoOrdine.includes(nuovoId) ||
+        celleMap.has(nuovoId)
+      );
+
+      return nuovoId;
+    }
+
+    /*
+     * Se il layout termina con una pagina incompleta,
+     * completa soltanto gli spazi mancanti prima
+     * di aggiungere una nuova pagina.
+     */
+    function allineaAInizioPagina() {
+      const resto =
+        nuovoOrdine.length % CELLE_PER_PAGINA;
+
+      if (resto === 0) {
+        return;
+      }
+
+      const mancanti =
+        CELLE_PER_PAGINA - resto;
+
+      for (
+        let indice = 0;
+        indice < mancanti;
+        indice += 1
+      ) {
+        nuovoOrdine.push(
+          creaNuovoIdVuotoAuto()
+        );
+      }
+    }
+
+    /*
+     * Aggiunge una pagina SENZA spostare
+     * o inserire nulla nelle pagine precedenti.
+     *
+     * "principale" = Zone 1, 2 e 3
+     * "zona4"      = Zona 4
+     * "senzaZona"  = ordini senza zona
+     */
+    function aggiungiPaginaIncrementale(tipo) {
+      allineaAInizioPagina();
+
+      const indiceInizio =
+        nuovoOrdine.length;
+
+      const idsPagina = Array.from(
+        { length: CELLE_PER_PAGINA },
+        () => creaNuovoIdVuotoAuto()
+      );
+
+      nuovoOrdine.push(...idsPagina);
+
+      if (tipo === "principale") {
+        for (
+          let colonna = 0;
+          colonna < COLONNE_PER_PAGINA;
+          colonna += 1
+        ) {
+          slotLiberiPerZona["1"].push(
+            indiceInizio + colonna
+          );
+
+          slotLiberiPerZona["2"].push(
+            indiceInizio +
+              COLONNE_PER_PAGINA +
+              colonna
+          );
+
+          slotLiberiPerZona["3"].push(
+            indiceInizio +
+              COLONNE_PER_PAGINA * 2 +
+              colonna
+          );
+        }
+
+        return;
+      }
+
+      const chiaveZona =
+        tipo === "zona4"
+          ? "4"
+          : "senzaZona";
+
+      for (
+        let colonna = 0;
+        colonna < COLONNE_PER_PAGINA;
+        colonna += 1
+      ) {
+        slotLiberiPerZona[chiaveZona].push(
+          indiceInizio + colonna
+        );
+      }
+    }
+
+    /*
+     * Prenota prima tutti gli inserimenti.
+     * Se una zona non ha più spazio nelle
+     * pagine salvate, crea soltanto allora
+     * una pagina aggiuntiva in fondo.
+     */
+    const inserimenti = [];
+
+    for (const cella of nuoveCelle) {
+      const zonaCella =
+        getZonaCella(cella);
+
+      let disponibili =
+        slotLiberiPerZona[zonaCella];
+
+      if (
+        !Array.isArray(disponibili)
+      ) {
+        window.alert(
+          `Zona non valida per ${cella.cliente}. ` +
+          "Nessun cliente è stato spostato."
+        );
+        return;
+      }
+
+      if (disponibili.length === 0) {
+        if (
+          zonaCella === "1" ||
+          zonaCella === "2" ||
+          zonaCella === "3"
+        ) {
+          aggiungiPaginaIncrementale(
+            "principale"
+          );
+        }
+        else if (zonaCella === "4") {
+          aggiungiPaginaIncrementale(
+            "zona4"
+          );
+        }
+        else {
+          aggiungiPaginaIncrementale(
+            "senzaZona"
+          );
+        }
+
+        disponibili =
+          slotLiberiPerZona[zonaCella];
+      }
+
+      const indiceDestinazione =
+        disponibili.shift();
+
+      if (
+        typeof indiceDestinazione !== "number"
+      ) {
+        window.alert(
+          `Impossibile trovare uno spazio sicuro per ${cella.cliente}. ` +
+          "Nessun cliente è stato spostato."
+        );
+        return;
+      }
+
+      inserimenti.push({
+        id: cella.id,
+        indice: indiceDestinazione,
+      });
+    }
+
+    /*
+     * Solo dopo avere trovato una posizione
+     * per TUTTI i nuovi ordini viene applicata
+     * la nuova disposizione.
+     */
+    inserimenti.forEach(
+      ({ id, indice }) => {
+        nuovoOrdine[indice] = id;
+      }
+    );
+
+    setOrdineCelle(nuovoOrdine);
+
+    window.alert(
+      `${nuoveCelle.length} nuovo/i ordine/i inserito/i nelle rispettive zone. ` +
+      "I clienti già presenti non sono stati spostati."
+    );
+  }
 function gestisciFineDrag(event) {
   const { active, over } = event;
 
