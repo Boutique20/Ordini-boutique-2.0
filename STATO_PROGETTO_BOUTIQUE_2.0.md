@@ -449,6 +449,45 @@ Prossimo intervento:
 - prima di qualsiasi nuova modifica applicativa eseguire un nuovo audit esclusivamente di lettura sui file coinvolti e concordare con l'utente l'intervento successivo.
 
 
+### Aggiornamento 03/09/2026 - Data operativa nella Stampa Totale
+
+Data:
+03/09/2026
+
+Commit pubblicato:
+e1c697f6628572d03f411406779f56715ca72d06
+
+File modificato:
+- app/stampa/totale/page.js
+
+Funzione completata:
+- ogni pagina della Stampa Totale mostra ora chiaramente la data operativa selezionata;
+- l'intestazione riporta il testo "STAMPA TOTALE - ORDINI DEL gg/mm/aaaa";
+- la data mostrata deriva da dataOperativa e non dalla data corrente del PC;
+- l'intestazione occupa una fascia dedicata di 5 mm sopra la griglia;
+- le informazioni secondarie precedentemente presenti nell'intestazione, come data/ora di generazione e numero pagina, restano nascoste;
+- non sono state modificate le logiche di caricamento ordini, zone, drag-and-drop, unioni, celle vuote, salvataggio layout o persistenza Supabase.
+
+Test eseguiti:
+- prova browser sulla pagina TEST con data operativa selezionata: data visualizzata correttamente;
+- verifica anteprima di stampa: data presente correttamente sul foglio;
+- controllo integrità dopo l'aggiunta dell'intestazione: 0 celle con contenuto tagliato;
+- layout Stampa Totale rimasto correttamente organizzato su 8 colonne e 3 righe;
+- file ufficiale protetto durante la fase TEST;
+- dopo approvazione utente, TEST copiato sull'ufficiale e hash ufficiale uguale all'hash TEST;
+- git diff --check superato;
+- commit verificato con esclusivamente app/stampa/totale/page.js;
+- push verificato con HEAD uguale a origin/main.
+
+Problemi o verifiche ancora aperte:
+- restano aperti i collaudi dedicati già indicati per nuovi ordini Zona 4, nuovi ordini senza zona e inserimento di nuovi ordini in presenza di unioni;
+- nessun problema è emerso nel collaudo della nuova intestazione con data.
+
+Prossimo intervento:
+- eseguire un audit esclusivamente di lettura di app/ordine-manuale/page.js e app/ordine-manuale-test/page.js;
+- verificare la struttura delle quantità, delle unità e delle eventuali righe aggiuntive;
+- progettare separatamente un contatore dei prodotti inseriti nell'ordine manuale, senza modificare salvataggio ordini, quantità, unità, Supabase o altre logiche approvate.
+
 ## 11. INTERVENTI SUCCESSIVI ANCORA APERTI
 
 Prossimo intervento da confermare:
