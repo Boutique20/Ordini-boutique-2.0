@@ -1308,6 +1308,21 @@ export default function OrdineManualePage() {
             >
               Consegna prevista: <strong>{formatDataConsegna(dataConsegna)}</strong>
             </div>
+          <div
+            style={{
+              marginBottom: 20,
+              padding: "12px 14px",
+              borderRadius: 12,
+              backgroundColor: "rgba(14,165,233,0.14)",
+              border: "1px solid rgba(125,211,252,0.35)",
+              color: "#ffffff",
+              fontSize: 17,
+              fontWeight: 600,
+            }}
+          >
+            Prodotti inseriti: <strong>{riepilogoOrdine.length}</strong>
+          </div>
+
             {riepilogoOrdine.length === 0 ? (
               <p style={{ color: "#cbd5e1" }}>Nessun prodotto selezionato.</p>
             ) : (
