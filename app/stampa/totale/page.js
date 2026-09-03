@@ -1970,11 +1970,22 @@ function gestisciFineDrag(event) {
         }
 
         .intestazione-stampa {
-          display: none !important;
-          height: 0 !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          border: none !important;
+          flex: 0 0 5mm;
+          min-height: 5mm;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
+          padding: 0 2mm;
+          margin: 0;
+          border-bottom: 1px solid #000000;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1;
+        }
+
+        .intestazione-stampa > div:not(:first-child) {
+          display: none;
         }
 
         .griglia-stampa {
@@ -2551,7 +2562,7 @@ function gestisciFineDrag(event) {
               return (
                 <div className="pagina-stampa" key={`pagina-${indexPagina}`}>
                   <div className="intestazione-stampa">
-                    <div>STAMPA TOTALE - ORDINI DELLA DATA</div>
+                    <div>STAMPA TOTALE - ORDINI DEL {formatDataConsegna(dataOperativa)}</div>
                     <div>
                       Generata: {formatDataOra(new Date().toISOString())}
                     </div>
