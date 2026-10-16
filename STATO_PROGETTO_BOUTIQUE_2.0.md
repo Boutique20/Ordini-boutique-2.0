@@ -1,6 +1,6 @@
 # STATO PROGETTO BOUTIQUE 2.0
 
-Ultimo aggiornamento: 03/09/2026
+Ultimo aggiornamento: 16/10/2026
 
 ## 1. PROGETTO
 
@@ -97,6 +97,98 @@ Prossimo intervento:
 - non modificare Supabase, schema database o altre logiche insieme al prossimo intervento.
 
 Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
+
+
+## 2A. INTERVENTO MOBILE APPROVATO IN TEST
+
+Data:
+16/10/2026
+
+Stato:
+- intervento completato e approvato nel solo ambiente TEST;
+- non ancora pubblicato;
+- nessun commit funzionale creato;
+- nessun push eseguito.
+
+File TEST:
+- app/ordine-manuale-test/page.js
+
+Hash SHA256 Mobile V2 approvata:
+CC61693E1FA5CB761BC75DA0EE8B0FF0C526F1F069BCC06C77B8BF3CC4D4D427
+
+Pagina PC ufficiale protetta:
+- app/ordine-manuale/page.js
+
+Hash SHA256 pagina PC ufficiale:
+308EEA2FB7E21D14155BC768AA8C745386C1DDD597FA051255E4535A5C8F6AEA
+
+Obiettivo completato nel TEST:
+- realizzata una interfaccia dedicata esclusivamente all'inserimento ordini da cellulare;
+- mantenuta separata la pagina ordine manuale utilizzata da PC;
+- ridotta l'altezza generale dell'interfaccia per velocizzare l'uso su smartphone;
+- cliente e data consegna posizionati nella parte superiore;
+- ricerca prodotto mantenuta sempre facilmente accessibile;
+- introdotti sottomenu per categorie prodotto;
+- una sola categoria può essere aperta alla volta quando non è attiva una ricerca;
+- la ricerca ha priorità sui sottomenu e visualizza direttamente i prodotti corrispondenti;
+- aggiunto il conteggio dei prodotti già inseriti per ciascuna categoria;
+- i prodotti già compilati vengono evidenziati visivamente;
+- quantità ottimizzata per tastiera numerica mobile;
+- unità KG/PZ e altre unità esistenti mantenute;
+- note prodotto e quantità aggiuntive mantenute in un pannello richiudibile;
+- riepilogo ordine mantenuto e reso compatto;
+- pulsante Conferma ordine mantenuto sempre accessibile nella parte inferiore della schermata.
+
+Logiche verificate e mantenute invariate:
+- caricaDati();
+- aggiornaQuantita();
+- aggiornaUnita();
+- aggiornaNotaProdotto();
+- aggiungiAltraQuantita();
+- aggiornaRigaAggiuntiva();
+- rimuoviRigaAggiuntiva();
+- prodottiFiltrati;
+- prodottiPerCategoria;
+- riepilogoOrdine;
+- inviaOrdine();
+- RPC Supabase crea_ordine_atomico;
+- salvataggio quantità;
+- unità di misura;
+- note prodotto;
+- note generali;
+- righe aggiuntive;
+- data_operativa;
+- notifica Telegram;
+- struttura dati Supabase.
+
+Test eseguiti:
+- verifica hash della pagina PC prima e dopo le modifiche;
+- pagina PC rimasta invariata;
+- modifiche eseguite esclusivamente nel TEST mobile;
+- confronto diff tra backup e TEST;
+- controllo Git con nessun file tracciato modificato;
+- staging vuoto;
+- prova nel browser locale;
+- prova da cellulare;
+- utente ha approvato la versione Mobile V2 con sottomenu.
+
+Decisione architetturale approvata:
+- /ordine-manuale resta la pagina dedicata al PC e non deve essere modificata;
+- la versione mobile non sostituirà la pagina PC;
+- verrà creata una nuova route ufficiale separata:
+  /ordine-manuale-mobile
+
+Prossimi interventi autorizzabili separatamente:
+1. creare la route ufficiale app/ordine-manuale-mobile/page.js copiando esclusivamente la Mobile V2 approvata;
+2. verificare che la nuova route mobile e la pagina PC funzionino contemporaneamente e in modo indipendente;
+3. dopo approvazione della pagina mobile ufficiale, aggiungere configurazione installabile tipo app/PWA per accesso rapido dal telefono;
+4. mantenere inizialmente il funzionamento online: nessun salvataggio offline verrà introdotto insieme a questo intervento.
+
+Ripristino:
+- backup Mobile V1 disponibile:
+  backup-ordine-manuale-test-prima-sottomenu-mobile-20261016-094141.js
+- il file ufficiale PC non è stato modificato;
+- il documento di stato ufficiale non viene modificato in questa fase.
 
 ## 3. REGOLE OPERATIVE OBBLIGATORIE
 
