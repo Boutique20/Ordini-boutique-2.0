@@ -99,47 +99,61 @@ Prossimo intervento:
 Nota: eventuali commit esclusivamente documentali di aggiornamento di questo file possono essere successivi al commit funzionale sopra indicato.
 
 
-## 2A. INTERVENTO MOBILE APPROVATO IN TEST
+## 2A. INTERVENTO MOBILE UFFICIALE PUBBLICATO
 
 Data:
 16/10/2026
 
 Stato:
-- intervento completato e approvato nel solo ambiente TEST;
-- non ancora pubblicato;
-- nessun commit funzionale creato;
-- nessun push eseguito.
+- intervento Mobile V2 completato;
+- versione TEST approvata dall'utente;
+- nuova route ufficiale creata separatamente dalla pagina PC;
+- test eseguiti sia da PC sia da smartphone;
+- commit funzionale creato e pubblicato su main;
+- intervento concluso senza modifiche a Supabase.
 
-File TEST:
+Commit funzionale pubblicato:
+c65c833dc0345170a68e8e3656351ac4cba83be9
+
+File ufficiale pubblicato:
+- app/ordine-manuale-mobile/page.js
+
+Route ufficiale smartphone:
+- /ordine-manuale-mobile
+
+Hash SHA256 Mobile V2 ufficiale:
+CC61693E1FA5CB761BC75DA0EE8B0FF0C526F1F069BCC06C77B8BF3CC4D4D427
+
+File TEST di origine:
 - app/ordine-manuale-test/page.js
 
-Hash SHA256 Mobile V2 approvata:
+Hash SHA256 Mobile V2 TEST:
 CC61693E1FA5CB761BC75DA0EE8B0FF0C526F1F069BCC06C77B8BF3CC4D4D427
 
 Pagina PC ufficiale protetta:
 - app/ordine-manuale/page.js
+- route /ordine-manuale
 
 Hash SHA256 pagina PC ufficiale:
 308EEA2FB7E21D14155BC768AA8C745386C1DDD597FA051255E4535A5C8F6AEA
 
-Obiettivo completato nel TEST:
-- realizzata una interfaccia dedicata esclusivamente all'inserimento ordini da cellulare;
-- mantenuta separata la pagina ordine manuale utilizzata da PC;
-- ridotta l'altezza generale dell'interfaccia per velocizzare l'uso su smartphone;
-- cliente e data consegna posizionati nella parte superiore;
-- ricerca prodotto mantenuta sempre facilmente accessibile;
-- introdotti sottomenu per categorie prodotto;
-- una sola categoria può essere aperta alla volta quando non è attiva una ricerca;
-- la ricerca ha priorità sui sottomenu e visualizza direttamente i prodotti corrispondenti;
-- aggiunto il conteggio dei prodotti già inseriti per ciascuna categoria;
-- i prodotti già compilati vengono evidenziati visivamente;
+Risultato:
+- la pagina PC esistente non è stata sostituita né modificata;
+- la pagina smartphone utilizza una route ufficiale indipendente;
+- Mobile TEST e Mobile ufficiale risultano identiche per hash;
+- interfaccia smartphone compatta approvata;
+- categorie prodotto apribili e richiudibili;
+- una sola categoria aperta alla volta quando non è attiva la ricerca;
+- ricerca prodotto con priorità sui sottomenu;
+- conteggio prodotti compilati per categoria;
+- prodotti compilati evidenziati;
 - quantità ottimizzata per tastiera numerica mobile;
 - unità KG/PZ e altre unità esistenti mantenute;
-- note prodotto e quantità aggiuntive mantenute in un pannello richiudibile;
-- riepilogo ordine mantenuto e reso compatto;
-- pulsante Conferma ordine mantenuto sempre accessibile nella parte inferiore della schermata.
+- note prodotto e quantità aggiuntive mantenute;
+- riepilogo ordine compatto;
+- pulsante Conferma ordine mantenuto facilmente accessibile.
 
-Logiche verificate e mantenute invariate:
+Logiche mantenute invariate:
 - caricaDati();
 - aggiornaQuantita();
 - aggiornaUnita();
@@ -162,33 +176,43 @@ Logiche verificate e mantenute invariate:
 - struttura dati Supabase.
 
 Test eseguiti:
-- verifica hash della pagina PC prima e dopo le modifiche;
-- pagina PC rimasta invariata;
-- modifiche eseguite esclusivamente nel TEST mobile;
-- confronto diff tra backup e TEST;
-- controllo Git con nessun file tracciato modificato;
-- staging vuoto;
-- prova nel browser locale;
-- prova da cellulare;
-- utente ha approvato la versione Mobile V2 con sottomenu.
+- controllo hash pagina PC prima e dopo l'intervento;
+- controllo hash Mobile TEST e Mobile ufficiale;
+- confronto TEST/mobile ufficiale senza differenze;
+- apertura /ordine-manuale in locale: OK;
+- apertura /ordine-manuale-mobile in locale: OK;
+- apertura /ordine-manuale-mobile da smartphone sulla stessa rete: OK;
+- verifica indipendenza delle due route;
+- controllo staging prima del commit;
+- commit contenente esclusivamente app/ordine-manuale-mobile/page.js;
+- verifica HEAD e origin/main dopo push;
+- nessuna modifica tracciata residua;
+- staging finale vuoto.
 
-Decisione architetturale approvata:
-- /ordine-manuale resta la pagina dedicata al PC e non deve essere modificata;
-- la versione mobile non sostituirà la pagina PC;
-- verrà creata una nuova route ufficiale separata:
-  /ordine-manuale-mobile
+Decisione architetturale definitiva:
+- /ordine-manuale resta la pagina dedicata al PC;
+- /ordine-manuale-mobile resta la pagina dedicata allo smartphone;
+- le due pagine devono restare separate;
+- la pagina mobile non deve sostituire né alterare la pagina PC.
 
-Prossimi interventi autorizzabili separatamente:
-1. creare la route ufficiale app/ordine-manuale-mobile/page.js copiando esclusivamente la Mobile V2 approvata;
-2. verificare che la nuova route mobile e la pagina PC funzionino contemporaneamente e in modo indipendente;
-3. dopo approvazione della pagina mobile ufficiale, aggiungere configurazione installabile tipo app/PWA per accesso rapido dal telefono;
-4. mantenere inizialmente il funzionamento online: nessun salvataggio offline verrà introdotto insieme a questo intervento.
+Supabase:
+- nessuna tabella modificata;
+- nessuna colonna modificata;
+- nessuna policy modificata;
+- nessuna funzione SQL modificata;
+- RPC crea_ordine_atomico mantenuta invariata.
+
+Prossimo intervento:
+- valutare e realizzare separatamente la configurazione installabile tipo app/PWA per /ordine-manuale-mobile;
+- l'intervento PWA non deve modificare la logica ordini;
+- inizialmente nessun salvataggio offline degli ordini.
 
 Ripristino:
-- backup Mobile V1 disponibile:
-  backup-ordine-manuale-test-prima-sottomenu-mobile-20261016-094141.js
-- il file ufficiale PC non è stato modificato;
-- il documento di stato ufficiale non viene modificato in questa fase.
+- commit funzionale Mobile V2:
+  c65c833dc0345170a68e8e3656351ac4cba83be9
+- backup TEST precedente alla pubblicazione mobile disponibile;
+- backup del documento TEST creato prima di questo aggiornamento;
+- la pagina PC ufficiale resta la baseline separata e protetta.
 
 ## 3. REGOLE OPERATIVE OBBLIGATORIE
 
